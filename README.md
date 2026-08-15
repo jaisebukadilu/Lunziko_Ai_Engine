@@ -206,6 +206,14 @@ uvicorn ai_engine.gateway.main:app --reload --port 8770
 
 Puis : http://localhost:8770/docs · http://localhost:8770/health
 
+## Déploiement (Docker)
+
+```bash
+docker compose up -d --build        # image jaisebukadilu/lunziko-ai-engine, port 8770
+curl http://localhost:8770/health
+```
+Guide complet (Docker Hub, volume de persistance, branchement Graphics Engine) : **`DEPLOY.md`**.
+
 ## Endpoints
 
 | Route | État |

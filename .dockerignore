@@ -1,0 +1,18 @@
+.git
+.github
+.venv
+**/__pycache__
+**/*.pyc
+tests
+sdk
+.env
+.ruff_cache
+.pytest_cache
+*.db
+data
+checkpoints
+# docs (l'image n'en a pas besoin ; on garde README pour pyproject)
+CONTEXT_LAYER_ARCHITECTURE.md
+LAIA_ARCHITECTURE.md
+CODE_EXECUTION_SANDBOX.md
+DEPLOY.md

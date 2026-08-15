@@ -1,0 +1,37 @@
+# Lunziko AI Engine — orchestration locale/production.
+#   docker compose up -d --build
+services:
+  ai-engine:
+    build: .
+    image: jaisebukadilu/lunziko-ai-engine:latest
+    container_name: lunziko-ai-engine
+    ports:
+      - "8770:8770"
+    env_file:
+      - .env            # clés providers, AE_MEMORY_KEY, AE_GRAPHICS_ENGINE_URL, etc.
+    environment:
+      - AE_HOST=0.0.0.0
+      - AE_PORT=8770
+      - AI_ENGINE_HOME=/data
+    volumes:
+      - ai_engine_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8770/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  # --- Branchement optionnel au Lunziko Graphics Engine (dépôt séparé) ---
+  # Décommenter et adapter le chemin/URL. Puis dans .env :
+  #   AE_GRAPHICS_ENGINE_URL=http://graphics-engine:8000
+  # graphics-engine:
+  #   build: ../Lunziko\ Graphics\ Engine
+  #   image: jaisebukadilu/lunziko-graphics-engine:latest
+  #   ports:
+  #     - "8000:8000"
+  #   restart: unless-stopped
+
+volumes:
+  ai_engine_data:
