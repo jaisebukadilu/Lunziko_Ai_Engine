@@ -65,9 +65,11 @@ class Settings(BaseSettings):
     ae_code_exec_timeout: int = 10          # secondes (wall-clock) du sous-processus
     ae_code_exec_max_output: int = 20000    # caractères max capturés
 
-    # Graphics Engine (moteur de rendu, dépôt séparé) : URL JSON-RPC. Vide => non branché
-    # (les Brains image/vision/video/3d restent « déclarés »).
+    # Graphics Engine (moteur de rendu, dépôt séparé) : API REST FastAPI (défaut 127.0.0.1:8000).
+    # Vide => non branché (les Brains image/vision/video/3d restent « déclarés »).
+    # ex : http://127.0.0.1:8000 . Auth optionnelle via X-API-Key (LUNZIKO_API_KEY côté moteur).
     ae_graphics_engine_url: str = ""
+    ae_graphics_engine_api_key: str = ""
 
     # --- Dérivés ---------------------------------------------------------
     @property

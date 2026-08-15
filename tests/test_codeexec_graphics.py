@@ -50,5 +50,5 @@ def test_graphics_brains_declared_when_unbranched(client):
 
 
 def test_graphics_call_unbranched_503(client):
-    r = client.post("/v1/graphics/call", json={"method": "imaging.info", "params": {}})
+    r = client.post("/v1/graphics/call", json={"method": "GET", "path": "/agents"})
     assert r.status_code == 503

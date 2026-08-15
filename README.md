@@ -106,10 +106,12 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   **Niveau 1** : **sandbox subprocess** isolé (cwd temp jetable, timeout, env minimal, sortie plafonnée),
   **DÉSACTIVÉ par défaut** — opt-in `AE_CODE_EXEC_ENABLED=true`, à n'activer que sous isolation OS pour du code
   non fiable. Permet la boucle `generate→run→fix` du Code Brain. Cf. `CODE_EXECUTION_SANDBOX.md`.
-- **Graphics Engine (branchement) ✅** (`/v1/graphics/{status,ping,brains,call}`) — adaptateur **client JSON-RPC**
-  vers le Lunziko Graphics Engine (dépôt séparé) : mapping **Brain → agents** (image→imaging, 3d→asset/cad/bim…) ;
-  quand `AE_GRAPHICS_ENGINE_URL` est branché, les **Brains image/vision/video/3d/cad passent de « declared » à
-  « active »**. Le Graphics Engine n'est pas modifié (contrat versionné consommé).
+- **Graphics Engine (branchement) ✅** (`/v1/graphics/{status,ping,brains,call}`) — adaptateur **client REST**
+  vers le Lunziko Graphics Engine (dépôt séparé, serveur FastAPI 127.0.0.1:8000, `X-API-Key`) : mapping
+  **Brain → groupes d'endpoints** (image→imaging/vector/pdf…, 3d→mesh/render/asset/cad/sketch…) ; quand
+  `AE_GRAPHICS_ENGINE_URL` est branché, les **Brains image/vision/video/3d/cad passent de « declared » à
+  « active »**. **Connexion validée en réel** (22 agents, /health/agents/capabilities). Le Graphics Engine n'est
+  pas modifié (API REST versionnée consommée).
 - **LAIA AI-CORE ✅** (`/v1/brains*`, `/v1/engines*`, `/v1/orchestrator/{plan,run}`, `/v1/blackboard*`,
   `/v1/validate`) — la **couche méta** au-dessus des modules : **Brain Registry** (catalogue de 16 cerveaux :
   text/reasoning/code/data/research/document/ui_ux/language actifs + vision/image/video/audio/music/voice/3d/cad

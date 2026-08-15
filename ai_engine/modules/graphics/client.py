@@ -1,79 +1,87 @@
-"""Client JSON-RPC du Lunziko Graphics Engine + mapping Brain → agents.
+"""Client REST du Lunziko Graphics Engine + mapping Brain → groupes d'endpoints.
 
-Adaptateur : `available()` (URL configurée), `ping()` (best-effort), `call(method, params)`.
-Le mapping associe les capacités des Brains multimédias aux agents du Graphics Engine, ce qui
-permet à LAIA d'activer ces Brains lorsque le moteur est branché.
+Le Graphics Engine (dépôt séparé) est un serveur **REST FastAPI** (défaut 127.0.0.1:8000,
+`X-API-Key` optionnel) : santé/agents/capabilities/engines + groupes image/imaging/video/mesh/
+render/vector/pdf/asset/cad/bim/sketch/shader/workflow… Adaptateur CLIENT : `available()` (URL
+configurée), `ping()`/`get()`/`post()`/`call()`. Le Graphics Engine n'est PAS modifié.
 """
 
 from __future__ import annotations
 
-import itertools
-
 from ai_engine.config import get_settings
 
-# Brain LAIA -> agents du Graphics Engine sollicités.
-BRAIN_TO_AGENTS = {
-    "image": ["imaging", "vector"],
-    "vision": ["imaging"],
-    "video": ["imaging", "asset"],
-    "3d": ["asset", "sketch", "cad", "bim"],
+# Brain LAIA -> groupes d'endpoints REST du Graphics Engine (tags réels).
+BRAIN_TO_GROUPS = {
+    "image": ["image", "imaging", "compose", "annotate", "raw", "vector", "pdf"],
+    "vision": ["imaging", "integrity"],
+    "video": ["video"],
+    "3d": ["mesh", "render", "asset", "accel", "vr", "cad", "sketch"],
     "cad": ["cad", "sketch", "bim"],
     "document": ["pdf", "imaging"],
 }
 
 # Brains dont l'activation dépend du Graphics Engine.
-GRAPHICS_BACKED_BRAINS = sorted(BRAIN_TO_AGENTS)
+GRAPHICS_BACKED_BRAINS = sorted(BRAIN_TO_GROUPS)
 
 
 class GraphicsEngineClient:
-    def __init__(self, base_url: str | None = None) -> None:
-        self._base = (base_url if base_url is not None else get_settings().ae_graphics_engine_url).rstrip("/")
-        self._ids = itertools.count(1)
+    def __init__(self, base_url: str | None = None, api_key: str | None = None) -> None:
+        s = get_settings()
+        self._base = (base_url if base_url is not None else s.ae_graphics_engine_url).rstrip("/")
+        self._key = api_key if api_key is not None else s.ae_graphics_engine_api_key
 
     def available(self) -> bool:
         return bool(self._base)
 
+    def _headers(self) -> dict:
+        h = {"content-type": "application/json"}
+        if self._key:
+            h["X-API-Key"] = self._key
+        return h
+
     def ping(self) -> dict:
-        """Best-effort : tente un appel JSON-RPC léger. Réseau requis (sinon reachable=False)."""
+        """GET /health (best-effort ; réseau requis)."""
         if not self.available():
             return {"configured": False, "reachable": False}
         try:
             import httpx
-            req = {"jsonrpc": "2.0", "id": next(self._ids), "method": "system.status", "params": {}}
             with httpx.Client(timeout=5) as c:
-                r = c.post(self._base, json=req)
+                r = c.get(f"{self._base}/health", headers=self._headers())
             return {"configured": True, "reachable": r.status_code == 200,
-                    "status_code": r.status_code}
+                    "status_code": r.status_code,
+                    "health": r.json() if r.status_code == 200 else None}
         except Exception as e:
-            return {"configured": True, "reachable": False, "error": str(e)[:120]}
+            return {"configured": True, "reachable": False, "error": str(e)[:160]}
 
-    async def call(self, method: str, params: dict | None = None) -> dict:
+    async def call(self, method: str, path: str, body: dict | None = None) -> dict:
+        """Appel générique d'un endpoint REST du Graphics Engine (GET/POST)."""
         if not self.available():
             raise RuntimeError("Graphics Engine non branché (AE_GRAPHICS_ENGINE_URL vide)")
         import httpx
-        req = {"jsonrpc": "2.0", "id": next(self._ids), "method": method, "params": params or {}}
+        url = f"{self._base}/{path.lstrip('/')}"
         async with httpx.AsyncClient(timeout=120) as c:
-            r = await c.post(self._base, json=req)
-        r.raise_for_status()
-        data = r.json()
-        if "error" in data:
-            raise RuntimeError(f"graphics {method}: {data['error']}")
-        return data.get("result", {})
+            if method.upper() == "GET":
+                r = await c.get(url, headers=self._headers(), params=body or {})
+            else:
+                r = await c.post(url, headers=self._headers(), json=body or {})
+        if r.status_code >= 400:
+            raise RuntimeError(f"graphics {r.status_code}: {r.text[:200]}")
+        return r.json()
 
 
 def graphics_status() -> dict:
-    client = GraphicsEngineClient()
-    configured = client.available()
+    s = get_settings()
     return {
-        "configured": configured,
-        "base_url": get_settings().ae_graphics_engine_url or None,
+        "configured": bool(s.ae_graphics_engine_url),
+        "base_url": s.ae_graphics_engine_url or None,
+        "transport": "REST (FastAPI)",
         "graphics_backed_brains": GRAPHICS_BACKED_BRAINS,
-        "brain_to_agents": BRAIN_TO_AGENTS,
-        "note": "brancher via AE_GRAPHICS_ENGINE_URL ; ces Brains passent alors de 'declared' à 'active'",
+        "brain_to_groups": BRAIN_TO_GROUPS,
+        "note": "brancher via AE_GRAPHICS_ENGINE_URL (ex http://127.0.0.1:8000) ; "
+                "ces Brains passent alors de 'declared' à 'active'",
     }
 
 
 def graphics_brain_availability() -> dict:
-    """Statut effectif des Brains dépendant du Graphics Engine (active si branché)."""
-    configured = GraphicsEngineClient().available()
+    configured = bool(get_settings().ae_graphics_engine_url)
     return {b: ("active" if configured else "declared") for b in GRAPHICS_BACKED_BRAINS}
