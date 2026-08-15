@@ -30,8 +30,9 @@ ENGINES = [
     _e("voice", "Voice Engine", "STT/TTS/dialogue (V-1 à venir)", "voice", status="partial"),
     _e("validation", "Validation Engine", "Vérification des résultats", "orchestrator.validation"),
     _e("mcp", "MCP Engine", "Interop Model Context Protocol", "mcp"),
+    _e("code_execution", "Code Execution Engine", "Exécution sandboxée (safe-eval ON, subprocess opt-in)", "codeexec", status="partial"),
+    _e("graphics", "Graphics Bridge Engine", "Pont vers le Lunziko Graphics Engine (JSON-RPC)", "graphics", status="partial"),
     # Déclarés (à brancher plus tard).
-    _e("code_execution", "Code Execution Engine", "Exécution de code sandboxée", "—", status="planned"),
     _e("image_generation", "Image Generation Engine", "Génération/édition d'image", "graphics-engine", status="planned"),
     _e("video", "Video Engine", "Pipeline vidéo", "graphics-engine", status="planned"),
     _e("audio", "Audio Engine", "Pipeline audio", "—", status="planned"),

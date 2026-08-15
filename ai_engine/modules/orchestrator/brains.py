@@ -84,14 +84,29 @@ class BrainRegistry:
             for b in SEED_BRAINS:
                 self._store.put(NS, b["id"], b)
 
+    @staticmethod
+    def _effective(rec: dict) -> dict:
+        """Statut effectif : un Brain 'declared' dépendant du Graphics Engine passe 'active'
+        quand le moteur est branché (AE_GRAPHICS_ENGINE_URL)."""
+        if rec.get("status") == "active":
+            return rec
+        try:
+            from ai_engine.modules.graphics.client import graphics_brain_availability
+            if graphics_brain_availability().get(rec["id"]) == "active":
+                return {**rec, "status": "active", "backend": "graphics-engine"}
+        except Exception:
+            pass
+        return rec
+
     def list(self, status: str | None = None) -> list[dict]:
-        rows = self._store.list(NS)
+        rows = [self._effective(r) for r in self._store.list(NS)]
         if status:
             rows = [r for r in rows if r.get("status") == status]
         return sorted(rows, key=lambda r: (r.get("status") != "active", r.get("id", "")))
 
     def get(self, bid: str) -> dict | None:
-        return self._store.get(NS, bid)
+        rec = self._store.get(NS, bid)
+        return self._effective(rec) if rec else None
 
     def register(self, manifest: dict) -> dict:
         bid = manifest["id"]

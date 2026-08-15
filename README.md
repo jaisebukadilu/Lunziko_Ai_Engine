@@ -46,6 +46,8 @@ ai_engine/
     ├── automation/ Moteur de flux par nœuds (chaîne des outils ; clean-room n8n)
     ├── actions/    Action Registry : les apps déclarent leurs actions exécutables (invocation validée)
     ├── orchestrator/ LAIA AI-CORE : Brain/Engine Registry + Orchestrator + Blackboard + Validation
+    ├── codeexec/   Code Execution Engine (A-11) : safe-eval (ON) + sandbox subprocess (opt-in)
+    ├── graphics/   Branchement au Lunziko Graphics Engine (client JSON-RPC, active les Brains 3D/image)
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -94,6 +96,15 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   Surface commune : chat/embed/RAG/mémoire/agent/**act (outils)**/écosystème/activité/contexte/assistant/handoff/
   neural/data/automation + `get`/`post` génériques. SDK Dart validé (`dart analyze` OK) ; Swift/Kotlin écrits en
   miroir (non compilés ici, toolchains absentes).
+- **Code Execution Engine ✅ (A-11, sûr par défaut)** (`/v1/code-exec/{status,eval,run}`) — **Niveau 0** :
+  évaluateur d'expressions **restreint (AST, liste blanche)** réellement sûr, toujours actif (`eval`) ;
+  **Niveau 1** : **sandbox subprocess** isolé (cwd temp jetable, timeout, env minimal, sortie plafonnée),
+  **DÉSACTIVÉ par défaut** — opt-in `AE_CODE_EXEC_ENABLED=true`, à n'activer que sous isolation OS pour du code
+  non fiable. Permet la boucle `generate→run→fix` du Code Brain. Cf. `CODE_EXECUTION_SANDBOX.md`.
+- **Graphics Engine (branchement) ✅** (`/v1/graphics/{status,ping,brains,call}`) — adaptateur **client JSON-RPC**
+  vers le Lunziko Graphics Engine (dépôt séparé) : mapping **Brain → agents** (image→imaging, 3d→asset/cad/bim…) ;
+  quand `AE_GRAPHICS_ENGINE_URL` est branché, les **Brains image/vision/video/3d/cad passent de « declared » à
+  « active »**. Le Graphics Engine n'est pas modifié (contrat versionné consommé).
 - **LAIA AI-CORE ✅** (`/v1/brains*`, `/v1/engines*`, `/v1/orchestrator/{plan,run}`, `/v1/blackboard*`,
   `/v1/validate`) — la **couche méta** au-dessus des modules : **Brain Registry** (catalogue de 16 cerveaux :
   text/reasoning/code/data/research/document/ui_ux/language actifs + vision/image/video/audio/music/voice/3d/cad
@@ -233,6 +244,8 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `GET /v1/blackboard/tasks/{id}` · `POST /v1/validate` | ✅ état de tâche partagé + validation d'artefacts |
 | `GET/PUT /v1/apps/{app}/requirements` | ✅ besoins d'une app (Brains/Engines) ↔ registre écosystème |
 | `POST /v1/evaluate` | ✅ score/qualité d'une sortie (Evaluation Engine) |
+| `POST /v1/code-exec/{eval,run}` · `GET .../status` | ✅ safe-eval (sûr) + sandbox subprocess (opt-in) |
+| `GET /v1/graphics/{status,brains}` · `POST .../call` | ✅ branchement Graphics Engine (JSON-RPC) |
 
 ## Persistance & indépendance
 

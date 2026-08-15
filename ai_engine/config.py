@@ -59,6 +59,16 @@ class Settings(BaseSettings):
     ae_lunziko_llm_ckpt: str = ""
     ae_lunziko_llm_tokenizer: str = ""
 
+    # Code Execution Engine (A-11). Niveau 0 (safe eval) toujours ON ; Niveau 1 (sandbox
+    # subprocess) DÉSACTIVÉ par défaut — n'activer que dans un environnement OS isolé.
+    ae_code_exec_enabled: bool = False
+    ae_code_exec_timeout: int = 10          # secondes (wall-clock) du sous-processus
+    ae_code_exec_max_output: int = 20000    # caractères max capturés
+
+    # Graphics Engine (moteur de rendu, dépôt séparé) : URL JSON-RPC. Vide => non branché
+    # (les Brains image/vision/video/3d restent « déclarés »).
+    ae_graphics_engine_url: str = ""
+
     # --- Dérivés ---------------------------------------------------------
     @property
     def home(self) -> Path:
