@@ -30,6 +30,7 @@ ai_engine/
     ├── activity/   Journal d'actions utilisateur (contexte comportemental, detail chiffré)
     ├── neural/     Système neuronal : backends + routeur d'intention + entraîneur ML + moteurs d'inférence
     ├── data/       Pilier données : profilage, nettoyage, préparation (RAG/corpus/entraînement)
+    ├── assistant/  Assistant scopé par app (zone de compétence) + agents (≤5) + WebSocket/UI + sessions
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -58,6 +59,13 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
 - **A-8 ✅** **Endpoints compatibles OpenAI** (`/v1/chat/completions` avec pseudo-streaming SSE, `/v1/embeddings`,
   `/v1/models`), auth `Authorization: Bearer` ou `X-API-Key` → **drop-in Open WebUI / LocalAI / Continue / Cline**,
   réutilise le ProviderManager (routage+fallback). Vrai streaming token-par-token = suivi. Cf. `../INTEROP_AND_PLATFORMS.md`.
+- **Assistant d'application ✅** (`/v1/assistant/{app}/...` + WebSocket) — **intégrable à toutes les apps Lunziko**,
+  chaque assistant **limité à la zone de compétence** de son app (fonctions issues du registre écosystème) :
+  assiste, corrige, agit dans ce périmètre et **redirige hors périmètre** (garde de scope via recherche
+  écosystème). **Jusqu'à 5 agents par application** (rôles spécialisés, plafond appliqué) pour fluidifier les
+  tâches (`/agents`, `/team`). **Connexion prête pour une interface visuelle future** : **WebSocket**
+  `/v1/assistant/{app}/ws` (événements `ready`/`answer`/`error`), **contrat UI** (`/ui-contract` : actions
+  rapides, agents, points de connexion) et **sessions** persistées (`/sessions`).
 - **Données ✅** (`/v1/data/{profile,clean,clean-text,prepare-rag,prepare-corpus,prepare-training}`) — pilier
   « matière première » : **profilage** (types, nuls, distincts), **nettoyage** tabulaire (trim, normalisation,
   coercition de types, valeurs manquantes, **déduplication**, lignes vides) et **nettoyage de corpus texte**
@@ -136,6 +144,10 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `GET /v1/neural/inference` | ✅ catalogue moteurs d'inférence locaux (Ollama/llama.cpp/vLLM/LM Studio/Triton) |
 | `POST /v1/data/{profile,clean,clean-text}` | ✅ profilage + nettoyage tabulaire/texte (dédup, coercition…) |
 | `POST /v1/data/{prepare-rag,prepare-corpus,prepare-training}` | ✅ préparation vers RAG / corpus LLM / entraînement ML |
+| `GET /v1/assistant/{app}/{scope,ui-contract,agents}` | ✅ assistant scopé à l'app + contrat UI + agents (≤5) |
+| `POST /v1/assistant/{app}/{ask,team,agents}` | ✅ assistance scopée · équipe d'agents · création d'agent |
+| `POST /v1/assistant/sessions` · `GET .../sessions/{id}` | ✅ sessions (interface future) |
+| `WS /v1/assistant/{app}/ws` | ✅ canal temps réel pour l'interface visuelle |
 
 ## Persistance & indépendance
 
