@@ -33,6 +33,7 @@ ai_engine/
     ├── assistant/  Assistant scopé par app (zone de compétence) + agents (≤5) + WebSocket/UI + sessions
     ├── handoff/    Redirection inter-apps + transfert/ouverture de fichiers vers l'app adaptée
     ├── tools/      Tool-calling : registre d'outils + boucle d'exécution (agents qui agissent)
+    ├── mcp/        Model Context Protocol : serveur (expose les outils) + client (importe des serveurs externes)
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -61,6 +62,10 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
 - **A-8 ✅** **Endpoints compatibles OpenAI** (`/v1/chat/completions` avec pseudo-streaming SSE, `/v1/embeddings`,
   `/v1/models`), auth `Authorization: Bearer` ou `X-API-Key` → **drop-in Open WebUI / LocalAI / Continue / Cline**,
   réutilise le ProviderManager (routage+fallback). Vrai streaming token-par-token = suivi. Cf. `../INTEROP_AND_PLATFORMS.md`.
+- **MCP ✅ (A-7)** (`POST /mcp` JSON-RPC 2.0, `GET /mcp`, `POST /v1/mcp/import`) — **serveur MCP** exposant les
+  outils de l'AI Engine (`initialize`/`tools/list`/`tools/call`) → consommable par Claude Desktop / Cline /
+  Continue ; **client MCP** qui consomme un serveur MCP externe et **importe ses outils** dans le registre local
+  (les agents `/v1/agent/act` peuvent alors les appeler). Standard ouvert (MIT), testé en process.
 - **Tool-calling natif ✅ (A-4b)** (`/v1/tools`, `/v1/tools/run`, `/v1/agent/act`) — les agents **agissent** :
   registre d'outils (nom + description + schéma JSON + handler) avec **outils intégrés** branchés sur les
   capacités existantes (`ecosystem_search`, `handoff_open_with`, `data_clean_text`, `ml_predict`,
@@ -165,6 +170,8 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/handoff/{redirect,open-with,transfer}` · `GET .../file-types` | ✅ redirection inter-apps + transfert/ouverture de fichiers |
 | `GET /v1/tools` · `POST /v1/tools/run` | ✅ registre d'outils + exécution directe |
 | `POST /v1/agent/act` | ✅ boucle tool-calling (le modèle appelle des outils puis répond) |
+| `POST /mcp` · `GET /mcp` | ✅ serveur MCP (JSON-RPC : initialize/tools.list/tools.call) |
+| `POST /v1/mcp/import` | ✅ client MCP : importe les outils d'un serveur MCP externe |
 
 ## Persistance & indépendance
 
