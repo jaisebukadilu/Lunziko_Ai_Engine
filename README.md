@@ -48,6 +48,7 @@ ai_engine/
     ├── orchestrator/ LAIA AI-CORE : Brain/Engine Registry + Orchestrator + Blackboard + Validation
     ├── codeexec/   Code Execution Engine (A-11) : safe-eval (ON) + sandbox subprocess (opt-in)
     ├── graphics/   Branchement au Lunziko Graphics Engine (client JSON-RPC, active les Brains 3D/image)
+    ├── connectors/ Bases de connaissances unifiées : ingestion multi-sources + recherche cross-namespace
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -96,6 +97,10 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   Surface commune : chat/embed/RAG/mémoire/agent/**act (outils)**/écosystème/activité/contexte/assistant/handoff/
   neural/data/automation + `get`/`post` génériques. SDK Dart validé (`dart analyze` OK) ; Swift/Kotlin écrits en
   miroir (non compilés ici, toolchains absentes).
+- **Connecteurs RAG ✅** (`/v1/connectors/{types,ingest,namespaces,search}`) — **bases de connaissances unifiées** :
+  ingère documents / historiques de chat / e-mails / fichiers / notes dans le RAG (avec métadonnées de source)
+  et **recherche unifiée cross-namespace** (fusion des résultats par score, avec attribution de source). Construit
+  au-dessus du module `rag` (offline).
 - **Code Execution Engine ✅ (A-11, sûr par défaut)** (`/v1/code-exec/{status,eval,run}`) — **Niveau 0** :
   évaluateur d'expressions **restreint (AST, liste blanche)** réellement sûr, toujours actif (`eval`) ;
   **Niveau 1** : **sandbox subprocess** isolé (cwd temp jetable, timeout, env minimal, sortie plafonnée),
@@ -246,6 +251,7 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/evaluate` | ✅ score/qualité d'une sortie (Evaluation Engine) |
 | `POST /v1/code-exec/{eval,run}` · `GET .../status` | ✅ safe-eval (sûr) + sandbox subprocess (opt-in) |
 | `GET /v1/graphics/{status,brains}` · `POST .../call` | ✅ branchement Graphics Engine (JSON-RPC) |
+| `POST /v1/connectors/{ingest,search}` · `GET .../{types,namespaces}` | ✅ ingestion multi-sources + recherche unifiée cross-namespace |
 
 ## Persistance & indépendance
 
