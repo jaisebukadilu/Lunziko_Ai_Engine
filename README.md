@@ -41,6 +41,9 @@ ai_engine/
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
+sdk/swift/          Client Swift (async/await) — macOS/iOS
+sdk/kotlin/         Client Kotlin (java.net.http) — JVM/Android
+sdk/dart/           Client Dart (package:http) — Flutter
 core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform)
 ```
 
@@ -78,6 +81,11 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
 - **Catalogue de schémas ✅ (A-17)** (`/v1/catalog/{register,schemas,resolve}`) — les apps publient leurs
   **schémas de données** (champs/types/description) ; **résolution sémantique** pour retrouver le schéma
   pertinent à partir d'une question. L'IA comprend les données manipulées.
+- **SDKs multiplateformes ✅ (A-9)** — clients pour le gateway en **TypeScript** (`sdk/typescript/`), **Swift**
+  (`sdk/swift/`, async/await macOS/iOS), **Kotlin** (`sdk/kotlin/`, JVM/Android) et **Dart** (`sdk/dart/`, Flutter).
+  Surface commune : chat/embed/RAG/mémoire/agent/**act (outils)**/écosystème/activité/contexte/assistant/handoff/
+  neural/data/automation + `get`/`post` génériques. SDK Dart validé (`dart analyze` OK) ; Swift/Kotlin écrits en
+  miroir (non compilés ici, toolchains absentes).
 - **Automatisation ✅ (A-10)** (`/v1/automation/flows`, `.../run`, `.../runs`) — **moteur de flux par nœuds**
   (clean-room, inspiré n8n) : un flux enchaîne des nœuds, chaque nœud appelle un **outil** du registre (A-4b)
   avec des arguments référençant l'entrée (`$input.x`) ou la sortie d'un nœud précédent (`$node.champ`). Flux et

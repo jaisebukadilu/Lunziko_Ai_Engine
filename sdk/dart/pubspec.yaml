@@ -1,0 +1,7 @@
+name: lunziko_ai_engine
+description: SDK client Dart de Lunziko AI Engine (autonome, indépendant de Platform).
+version: 0.1.0
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+dependencies:
+  http: ^1.2.0
