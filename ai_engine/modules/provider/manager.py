@@ -8,7 +8,9 @@ from __future__ import annotations
 from functools import lru_cache
 
 from ai_engine.config import get_settings
-from ai_engine.modules.provider.base import ChatMessage, ChatResult, ProviderError, is_retryable
+from ai_engine.modules.provider.base import (
+    ChatMessage, ChatResult, ProviderError, ToolChatResult, ToolSpec, is_retryable,
+)
 from ai_engine.modules.provider.providers.claude import ClaudeProvider
 from ai_engine.modules.provider.providers.gemini import GeminiProvider
 from ai_engine.modules.provider.providers.lunziko_native import LunzikoNativeProvider
@@ -72,6 +74,41 @@ class ProviderManager:
             + (" | ".join(errors) if errors else "Configurez au moins une clé d'API."),
             retryable=False,
         )
+
+    def tool_capable(self) -> list[str]:
+        out = []
+        for name in self._order(None):
+            p = self._providers.get(name)
+            if p is None or not p.available():  # type: ignore[attr-defined]
+                continue
+            if getattr(p, "supports_tools", lambda: False)():
+                out.append(name)
+        return out
+
+    async def chat_with_tools(
+        self, messages: list[dict], tools: list[ToolSpec], *,
+        provider: str | None = None, system: str | None = None,
+        model: str | None = None, max_tokens: int = 4096,
+    ) -> ToolChatResult:
+        errors: list[str] = []
+        for name in self._order(provider):
+            p = self._providers.get(name)
+            if p is None or not p.available():  # type: ignore[attr-defined]
+                continue
+            if not getattr(p, "supports_tools", lambda: False)():
+                continue
+            try:
+                return await p.chat_with_tools(messages, tools, system=system, model=model, max_tokens=max_tokens)  # type: ignore[attr-defined]
+            except ProviderError as e:
+                errors.append(str(e))
+                if e.retryable and is_retryable(str(e)):
+                    continue
+                raise
+            except Exception as e:
+                errors.append(f"{name}: {e}")
+                continue
+        raise ProviderError(
+            "Aucun provider compatible tool-calling disponible. " + " | ".join(errors), retryable=False)
 
 
 @lru_cache

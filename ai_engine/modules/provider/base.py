@@ -22,6 +22,27 @@ class ChatResult(BaseModel):
     output_tokens: int = 0
 
 
+# --- Tool-calling (A-4b) : types neutres, convertis par chaque adaptateur ---
+class ToolSpec(BaseModel):
+    name: str
+    description: str
+    parameters: dict = Field(default_factory=lambda: {"type": "object", "properties": {}})
+
+
+class ToolCall(BaseModel):
+    id: str
+    name: str
+    arguments: dict = Field(default_factory=dict)
+
+
+class ToolChatResult(BaseModel):
+    content: str = ""
+    tool_calls: list[ToolCall] = Field(default_factory=list)
+    provider: str
+    model: str
+    stop_reason: str = "end"  # "tool_use" quand le modèle demande un outil
+
+
 @runtime_checkable
 class Provider(Protocol):
     name: str

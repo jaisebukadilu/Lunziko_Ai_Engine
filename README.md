@@ -32,6 +32,7 @@ ai_engine/
     ├── data/       Pilier données : profilage, nettoyage, préparation (RAG/corpus/entraînement)
     ├── assistant/  Assistant scopé par app (zone de compétence) + agents (≤5) + WebSocket/UI + sessions
     ├── handoff/    Redirection inter-apps + transfert/ouverture de fichiers vers l'app adaptée
+    ├── tools/      Tool-calling : registre d'outils + boucle d'exécution (agents qui agissent)
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -60,6 +61,12 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
 - **A-8 ✅** **Endpoints compatibles OpenAI** (`/v1/chat/completions` avec pseudo-streaming SSE, `/v1/embeddings`,
   `/v1/models`), auth `Authorization: Bearer` ou `X-API-Key` → **drop-in Open WebUI / LocalAI / Continue / Cline**,
   réutilise le ProviderManager (routage+fallback). Vrai streaming token-par-token = suivi. Cf. `../INTEROP_AND_PLATFORMS.md`.
+- **Tool-calling natif ✅ (A-4b)** (`/v1/tools`, `/v1/tools/run`, `/v1/agent/act`) — les agents **agissent** :
+  registre d'outils (nom + description + schéma JSON + handler) avec **outils intégrés** branchés sur les
+  capacités existantes (`ecosystem_search`, `handoff_open_with`, `data_clean_text`, `ml_predict`,
+  `activity_timeline`), **boucle d'exécution** provider-agnostique (le modèle demande un outil → exécution →
+  re-boucle → réponse) et **tool-calling** implémenté pour Claude et les providers OpenAI-compatibles
+  (ChatGPT/Mistral/DeepSeek/local). Testé offline (boucle avec provider factice + parseurs).
 - **Handoff inter-applications ✅** (`/v1/handoff/{redirect,open-with,transfer,file-types}`) — depuis une app,
   selon la situation : **rediriger** l'utilisateur vers l'app Lunziko compétente pour poursuivre sa tâche,
   **transférer** un fichier/dossier vers une autre app, ou **l'ouvrir dans l'app la plus adaptée** (résolution
@@ -156,6 +163,8 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/assistant/sessions` · `GET .../sessions/{id}` | ✅ sessions (interface future) |
 | `WS /v1/assistant/{app}/ws` | ✅ canal temps réel pour l'interface visuelle |
 | `POST /v1/handoff/{redirect,open-with,transfer}` · `GET .../file-types` | ✅ redirection inter-apps + transfert/ouverture de fichiers |
+| `GET /v1/tools` · `POST /v1/tools/run` | ✅ registre d'outils + exécution directe |
+| `POST /v1/agent/act` | ✅ boucle tool-calling (le modèle appelle des outils puis répond) |
 
 ## Persistance & indépendance
 
