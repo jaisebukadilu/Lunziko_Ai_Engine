@@ -31,6 +31,10 @@ neural-deep = ["torch>=2.2"]                          # réseaux profonds + GPU 
 neural-hf = ["transformers>=4.44", "sentence-transformers>=3.0"]  # modèles pré-entraînés (rerank/embeddings)
 dev = ["pytest>=8", "ruff>=0.6"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
