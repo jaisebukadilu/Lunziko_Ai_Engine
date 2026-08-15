@@ -37,6 +37,7 @@ ai_engine/
     ├── context/    Couche de Contexte : profil & habitudes + état applicatif live + assembleur unifié
     ├── feedback/   Retours utilisateur (up/down + corrections) → stats + few-shot
     ├── catalog/    Schémas de données publiés par les apps + résolution sémantique
+    ├── automation/ Moteur de flux par nœuds (chaîne des outils ; clean-room n8n)
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -77,6 +78,10 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
 - **Catalogue de schémas ✅ (A-17)** (`/v1/catalog/{register,schemas,resolve}`) — les apps publient leurs
   **schémas de données** (champs/types/description) ; **résolution sémantique** pour retrouver le schéma
   pertinent à partir d'une question. L'IA comprend les données manipulées.
+- **Automatisation ✅ (A-10)** (`/v1/automation/flows`, `.../run`, `.../runs`) — **moteur de flux par nœuds**
+  (clean-room, inspiré n8n) : un flux enchaîne des nœuds, chaque nœud appelle un **outil** du registre (A-4b)
+  avec des arguments référençant l'entrée (`$input.x`) ou la sortie d'un nœud précédent (`$node.champ`). Flux et
+  exécutions persistés. Réimplémenté from scratch (aucun code copié).
 - **MCP ✅ (A-7)** (`POST /mcp` JSON-RPC 2.0, `GET /mcp`, `POST /v1/mcp/import`) — **serveur MCP** exposant les
   outils de l'AI Engine (`initialize`/`tools/list`/`tools/call`) → consommable par Claude Desktop / Cline /
   Continue ; **client MCP** qui consomme un serveur MCP externe et **importe ses outils** dans le registre local
@@ -191,6 +196,7 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/context/assemble` | ✅ contexte unifié temps réel (profil+activité+état+éco, bloc system) |
 | `POST /v1/feedback` · `GET .../stats` · `.../corrections` | ✅ retours utilisateur → satisfaction + few-shot |
 | `POST /v1/catalog/{register,resolve}` · `GET .../schemas` | ✅ schémas de données + résolution sémantique |
+| `POST /v1/automation/flows` · `.../{name}/run` · `GET .../runs` | ✅ flux de nœuds chaînant les outils (persistés) |
 
 ## Persistance & indépendance
 
