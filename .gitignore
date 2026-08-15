@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.ruff_cache/
+.pytest_cache/
+# Magasin local & modèles — jamais versionnés
+models/
+*.onnx
+*.bin
+*.pt
+*.gguf
+*.db
+# SDK JS
+node_modules/
+sdk/*/dist/
+sdk/*/node_modules/

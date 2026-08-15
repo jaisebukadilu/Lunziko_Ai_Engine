@@ -1,0 +1,18 @@
+{
+  "name": "@lunziko/ai-engine",
+  "version": "0.1.0",
+  "description": "SDK client de Lunziko AI Engine (autonome) — chat, embeddings, RAG, mémoire, knowledge, agents, workflows, voix.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "engines": { "node": ">=18" },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
