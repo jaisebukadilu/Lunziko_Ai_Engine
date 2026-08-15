@@ -28,7 +28,8 @@ ai_engine/
     ├── openai_api/ Endpoints compatibles OpenAI (drop-in Open WebUI/LocalAI/Continue)
     ├── ecosystem/  Ingestion du registre maître Lunziko (apps + fonctions) au démarrage
     ├── activity/   Journal d'actions utilisateur (contexte comportemental, detail chiffré)
-    ├── neural/     Système neuronal : backends (torch/tf/jax/sklearn/transformers) + routeur d'intention
+    ├── neural/     Système neuronal : backends + routeur d'intention + entraîneur ML + moteurs d'inférence
+    ├── data/       Pilier données : profilage, nettoyage, préparation (RAG/corpus/entraînement)
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -57,6 +58,16 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
 - **A-8 ✅** **Endpoints compatibles OpenAI** (`/v1/chat/completions` avec pseudo-streaming SSE, `/v1/embeddings`,
   `/v1/models`), auth `Authorization: Bearer` ou `X-API-Key` → **drop-in Open WebUI / LocalAI / Continue / Cline**,
   réutilise le ProviderManager (routage+fallback). Vrai streaming token-par-token = suivi. Cf. `../INTEROP_AND_PLATFORMS.md`.
+- **Données ✅** (`/v1/data/{profile,clean,clean-text,prepare-rag,prepare-corpus,prepare-training}`) — pilier
+  « matière première » : **profilage** (types, nuls, distincts), **nettoyage** tabulaire (trim, normalisation,
+  coercition de types, valeurs manquantes, **déduplication**, lignes vides) et **nettoyage de corpus texte**
+  (normalisation, dédup, filtre de longueur), puis **préparation** vers RAG / corpus du LLM natif / table
+  d'entraînement ML. Pur Python, offline. Inspiration clean-room OpenRefine/KNIME (aucun code copié).
+- **Apprentissage ML ✅** (`/v1/neural/ml/{train,predict,models}`) — pilier « apprendre à partir d'exemples » :
+  entraîne un classifieur supervisé (embeddings → softmax NumPy, ou scikit-learn si présent) à partir de paires
+  (texte, label), **persisté** et rechargeable. Se combine au module `data` (prépare → entraîne → prédit).
+- **Moteurs d'inférence ✅** (`/v1/neural/inference`) — catalogue des serveurs locaux consommables
+  (Ollama, llama.cpp, vLLM, LM Studio, Triton + LLM natif `lunziko`) via le Provider Manager (OpenAI-compat).
 - **Système neuronal ✅** (`/v1/neural/{status,backends,route,train}`) — couche d'abstraction au-dessus des
   **bibliothèques neuronales** : backend **NumPy natif** (offline) + adaptateurs **optionnels** PyTorch /
   TensorFlow / Keras / JAX / **scikit-learn** / **Transformers** (import paresseux, jamais requis pour démarrer ;
@@ -121,6 +132,10 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `DELETE /v1/activity/{user_id}` | ✅ effacement (rétention / droit à l'oubli) |
 | `GET /v1/neural/{status,backends}` | ✅ bibliothèques neuronales disponibles (numpy + torch/tf/jax/sklearn/transformers si installés) |
 | `POST /v1/neural/{route,train}` | ✅ routeur d'intention neuronal (embeddings → classifieur) |
+| `POST /v1/neural/ml/{train,predict}` · `GET .../models` | ✅ apprentissage supervisé depuis exemples (persisté) |
+| `GET /v1/neural/inference` | ✅ catalogue moteurs d'inférence locaux (Ollama/llama.cpp/vLLM/LM Studio/Triton) |
+| `POST /v1/data/{profile,clean,clean-text}` | ✅ profilage + nettoyage tabulaire/texte (dédup, coercition…) |
+| `POST /v1/data/{prepare-rag,prepare-corpus,prepare-training}` | ✅ préparation vers RAG / corpus LLM / entraînement ML |
 
 ## Persistance & indépendance
 

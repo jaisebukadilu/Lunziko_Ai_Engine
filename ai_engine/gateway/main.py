@@ -15,6 +15,7 @@ from ai_engine.gateway.auth import require_api_key, require_bearer_or_key
 from ai_engine.modules.activity.router import router as activity_router
 from ai_engine.modules.agents.router import router as agent_router
 from ai_engine.modules.code.router import router as code_router
+from ai_engine.modules.data.router import router as data_router
 from ai_engine.modules.ecosystem.router import router as ecosystem_router
 from ai_engine.modules.openai_api.router import router as openai_router
 from ai_engine.modules.embeddings.router import router as embeddings_router
@@ -90,7 +91,7 @@ def health() -> dict:
             "provider": True, "embeddings": True, "rag": True,
             "memory": True, "knowledge": True, "agents": True,
             "workflows": True, "code": True, "openai_compat": True, "voice": True,
-            "ecosystem": True, "activity": True, "neural": True,
+            "ecosystem": True, "activity": True, "neural": True, "data": True,
         },
         "code_local_ready": bool(settings.ae_local_base_url),
         "openai_compatible": "/v1/chat/completions · /v1/embeddings · /v1/models",
@@ -110,5 +111,6 @@ app.include_router(voice_router, dependencies=[Depends(require_api_key)])
 app.include_router(ecosystem_router, dependencies=[Depends(require_api_key)])
 app.include_router(activity_router, dependencies=[Depends(require_api_key)])
 app.include_router(neural_router, dependencies=[Depends(require_api_key)])
+app.include_router(data_router, dependencies=[Depends(require_api_key)])
 # Endpoints compatibles OpenAI : auth Bearer OU X-API-Key (drop-in Open WebUI/LocalAI/…)
 app.include_router(openai_router, dependencies=[Depends(require_bearer_or_key)])
