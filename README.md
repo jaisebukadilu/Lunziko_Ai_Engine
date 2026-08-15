@@ -31,6 +31,7 @@ ai_engine/
     ├── neural/     Système neuronal : backends + routeur d'intention + entraîneur ML + moteurs d'inférence
     ├── data/       Pilier données : profilage, nettoyage, préparation (RAG/corpus/entraînement)
     ├── assistant/  Assistant scopé par app (zone de compétence) + agents (≤5) + WebSocket/UI + sessions
+    ├── handoff/    Redirection inter-apps + transfert/ouverture de fichiers vers l'app adaptée
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -59,6 +60,12 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
 - **A-8 ✅** **Endpoints compatibles OpenAI** (`/v1/chat/completions` avec pseudo-streaming SSE, `/v1/embeddings`,
   `/v1/models`), auth `Authorization: Bearer` ou `X-API-Key` → **drop-in Open WebUI / LocalAI / Continue / Cline**,
   réutilise le ProviderManager (routage+fallback). Vrai streaming token-par-token = suivi. Cf. `../INTEROP_AND_PLATFORMS.md`.
+- **Handoff inter-applications ✅** (`/v1/handoff/{redirect,open-with,transfer,file-types}`) — depuis une app,
+  selon la situation : **rediriger** l'utilisateur vers l'app Lunziko compétente pour poursuivre sa tâche,
+  **transférer** un fichier/dossier vers une autre app, ou **l'ouvrir dans l'app la plus adaptée** (résolution
+  par **type de fichier** — table `.xlsx→MySheet`, `.dwg→CAD`, `.png→Photo`, `.ifc→BIM`… — sinon recherche
+  sémantique dans le registre). Produit des **actions structurées** (deep-link, executor host/HUB/Platform)
+  que l'app hôte exécute. Intégré à l'assistant : hors périmètre → action de redirection attachée à la réponse.
 - **Assistant d'application ✅** (`/v1/assistant/{app}/...` + WebSocket) — **intégrable à toutes les apps Lunziko**,
   chaque assistant **limité à la zone de compétence** de son app (fonctions issues du registre écosystème) :
   assiste, corrige, agit dans ce périmètre et **redirige hors périmètre** (garde de scope via recherche
@@ -148,6 +155,7 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/assistant/{app}/{ask,team,agents}` | ✅ assistance scopée · équipe d'agents · création d'agent |
 | `POST /v1/assistant/sessions` · `GET .../sessions/{id}` | ✅ sessions (interface future) |
 | `WS /v1/assistant/{app}/ws` | ✅ canal temps réel pour l'interface visuelle |
+| `POST /v1/handoff/{redirect,open-with,transfer}` · `GET .../file-types` | ✅ redirection inter-apps + transfert/ouverture de fichiers |
 
 ## Persistance & indépendance
 

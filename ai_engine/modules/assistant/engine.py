@@ -117,9 +117,21 @@ class AppAssistant:
         except ProviderError as e:
             error = str(e)
 
+        # Handoff : si hors périmètre, produire l'action de redirection prête à exécuter.
+        handoff = None
+        if redirect:
+            try:
+                from ai_engine.modules.handoff.engine import get_handoff_engine
+
+                h = await get_handoff_engine().redirect(app, query, user_id=user_id)
+                handoff = h.get("action")
+            except Exception:
+                handoff = None
+
         return {
             "app": sc["app"], "scope_known": sc["known"],
             "in_scope": redirect is None, "redirect": redirect,
+            "handoff": handoff,
             "answer": answer, "error": error,
         }
 
