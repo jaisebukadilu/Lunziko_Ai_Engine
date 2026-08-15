@@ -42,14 +42,28 @@ class AIOrchestrator:
         reg = get_brain_registry()
         brains_used = sorted({s["brain"] for s in subtasks})
         engines_used = sorted({e for s in subtasks for e in s["engines"]})
+        # Besoins de l'app (LAIA ↔ écosystème) : biaise/complète la sélection de Brains.
+        app_req = None
+        if app:
+            try:
+                from ai_engine.modules.orchestrator.app_requirements import get_app_requirements
+                r = get_app_requirements().resolve(app)
+                app_req = {"app_known": r["app_known"],
+                           "brains": [b["id"] for b in r["required_brains"]],
+                           "engines": r["required_engines"]}
+                brains_used = sorted(set(brains_used) | set(app_req["brains"]))
+            except Exception:
+                app_req = None
+
         bb = get_blackboard()
         task = bb.create(goal, user_id=user_id, app=app)
         bb.update(task["id"], plan=subtasks, context=context or {},
-                  decisions=[{"intent": intent, "brains": brains_used}])
+                  decisions=[{"intent": intent, "brains": brains_used, "app_requirements": app_req}])
         return {
             "task_id": task["id"], "goal": goal, "intent": intent,
             "brains": [{"id": b, "status": (reg.get(b) or {}).get("status", "active")} for b in brains_used],
             "engines": engines_used, "plan": subtasks,
+            "app_requirements": app_req,
             "context": {"available": context is not None},
         }
 

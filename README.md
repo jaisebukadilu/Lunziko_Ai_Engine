@@ -99,7 +99,9 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   text/reasoning/code/data/research/document/ui_ux/language actifs + vision/image/video/audio/music/voice/3d/cad
   déclarés, manifestes + résolution), **Engine Registry** (mappe les modules existants), **AI Orchestrator**
   (intent→contexte→décomposition→sélection de Brains→plan, exécution best-effort + validation), **AI Blackboard**
-  (état de tâche partagé), **Task Intelligence** (décompose un objectif) et **Validation Engine** (checks par type).
+  (état de tâche partagé), **Task Intelligence** (décompose un objectif), **Validation Engine** (checks par type),
+  **Evaluation Engine** (score/qualité) et **App Requirements** (chaque app déclare ses besoins en Brains/Engines,
+  croisés avec le registre écosystème et injectés dans le plan de l'orchestrateur).
 - **Action Registry ✅** (`/v1/actions/{register,invoke}`, `GET /v1/actions`) — les apps **déclarent leurs
   actions exécutables** (créer une facture, envoyer un message…) avec un schéma d'arguments ; l'AI Engine les
   découvre, **valide** les arguments et produit une **instruction d'action structurée** (deep-link, executor,
@@ -228,6 +230,8 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `GET /v1/engines` · `GET /v1/engines/{id}` | ✅ moteurs LAIA (mappe les modules existants) |
 | `POST /v1/orchestrator/{plan,run}` | ✅ orchestration : décompose → assigne Brains → (exécute) → valide |
 | `GET /v1/blackboard/tasks/{id}` · `POST /v1/validate` | ✅ état de tâche partagé + validation d'artefacts |
+| `GET/PUT /v1/apps/{app}/requirements` | ✅ besoins d'une app (Brains/Engines) ↔ registre écosystème |
+| `POST /v1/evaluate` | ✅ score/qualité d'une sortie (Evaluation Engine) |
 
 ## Persistance & indépendance
 

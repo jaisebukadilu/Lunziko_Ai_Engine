@@ -5,10 +5,12 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from ai_engine.modules.orchestrator.app_requirements import get_app_requirements
 from ai_engine.modules.orchestrator.blackboard import get_blackboard
 from ai_engine.modules.orchestrator.brains import get_brain_registry
 from ai_engine.modules.orchestrator.engine import get_orchestrator
 from ai_engine.modules.orchestrator.engines import get_engine, list_engines
+from ai_engine.modules.orchestrator.evaluation import evaluate
 from ai_engine.modules.orchestrator.validation import supported_types, validate
 
 router = APIRouter(prefix="/v1", tags=["laia"])
@@ -42,6 +44,17 @@ class OrchestrateRequest(BaseModel):
 class ValidateRequest(BaseModel):
     type: str = Field(min_length=1)
     content: object
+
+
+class RequirementsRequest(BaseModel):
+    brains: list[str] | None = None
+    engines: list[str] | None = None
+    services: list[str] | None = None
+
+
+class EvaluateRequest(BaseModel):
+    task: str = Field(min_length=1)
+    output: str = ""
 
 
 # --- Brains ---
@@ -117,6 +130,22 @@ def blackboard_tasks() -> dict:
     return {"tasks": get_blackboard().list()}
 
 
+# --- App Requirements (LAIA ↔ écosystème) ---
+@router.get("/apps/requirements")
+def app_requirements_list() -> dict:
+    return {"apps": get_app_requirements().list()}
+
+
+@router.get("/apps/{app}/requirements")
+def app_requirements(app: str) -> dict:
+    return get_app_requirements().resolve(app)
+
+
+@router.put("/apps/{app}/requirements")
+def set_app_requirements(app: str, req: RequirementsRequest) -> dict:
+    return get_app_requirements().set(app, brains=req.brains, engines=req.engines, services=req.services)
+
+
 # --- Validation ---
 @router.post("/validate")
 def validate_artifact(req: ValidateRequest) -> dict:
@@ -126,3 +155,9 @@ def validate_artifact(req: ValidateRequest) -> dict:
 @router.get("/validate/types")
 def validate_types() -> dict:
     return {"types": supported_types()}
+
+
+# --- Evaluation ---
+@router.post("/evaluate")
+def evaluate_output(req: EvaluateRequest) -> dict:
+    return evaluate(req.task, req.output)
