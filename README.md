@@ -38,6 +38,7 @@ ai_engine/
     ├── feedback/   Retours utilisateur (up/down + corrections) → stats + few-shot
     ├── catalog/    Schémas de données publiés par les apps + résolution sémantique
     ├── automation/ Moteur de flux par nœuds (chaîne des outils ; clean-room n8n)
+    ├── actions/    Action Registry : les apps déclarent leurs actions exécutables (invocation validée)
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -86,6 +87,10 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   Surface commune : chat/embed/RAG/mémoire/agent/**act (outils)**/écosystème/activité/contexte/assistant/handoff/
   neural/data/automation + `get`/`post` génériques. SDK Dart validé (`dart analyze` OK) ; Swift/Kotlin écrits en
   miroir (non compilés ici, toolchains absentes).
+- **Action Registry ✅** (`/v1/actions/{register,invoke}`, `GET /v1/actions`) — les apps **déclarent leurs
+  actions exécutables** (créer une facture, envoyer un message…) avec un schéma d'arguments ; l'AI Engine les
+  découvre, **valide** les arguments et produit une **instruction d'action structurée** (deep-link, executor,
+  `requires_confirmation`) exécutée par l'app hôte. Complète handoff (navigation/fichiers) et tools (capacités IA).
 - **Automatisation ✅ (A-10)** (`/v1/automation/flows`, `.../run`, `.../runs`) — **moteur de flux par nœuds**
   (clean-room, inspiré n8n) : un flux enchaîne des nœuds, chaque nœud appelle un **outil** du registre (A-4b)
   avec des arguments référençant l'entrée (`$input.x`) ou la sortie d'un nœud précédent (`$node.champ`). Flux et
@@ -205,6 +210,7 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/feedback` · `GET .../stats` · `.../corrections` | ✅ retours utilisateur → satisfaction + few-shot |
 | `POST /v1/catalog/{register,resolve}` · `GET .../schemas` | ✅ schémas de données + résolution sémantique |
 | `POST /v1/automation/flows` · `.../{name}/run` · `GET .../runs` | ✅ flux de nœuds chaînant les outils (persistés) |
+| `POST /v1/actions/{register,invoke}` · `GET /v1/actions` | ✅ actions d'app déclarées + invocation validée |
 
 ## Persistance & indépendance
 

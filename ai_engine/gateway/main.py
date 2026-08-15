@@ -12,6 +12,7 @@ from ai_engine import __version__
 from ai_engine.config import get_settings
 from ai_engine.core.registry import get_storage
 from ai_engine.gateway.auth import require_api_key, require_bearer_or_key
+from ai_engine.modules.actions.router import router as actions_router
 from ai_engine.modules.activity.router import router as activity_router
 from ai_engine.modules.agents.router import router as agent_router
 from ai_engine.modules.automation.router import router as automation_router
@@ -102,6 +103,7 @@ def health() -> dict:
             "ecosystem": True, "activity": True, "neural": True, "data": True,
             "assistant": True, "handoff": True, "tools": True, "mcp": True,
             "context": True, "feedback": True, "catalog": True, "automation": True,
+            "actions": True,
         },
         "code_local_ready": bool(settings.ae_local_base_url),
         "openai_compatible": "/v1/chat/completions · /v1/embeddings · /v1/models",
@@ -130,6 +132,7 @@ app.include_router(context_router, dependencies=[Depends(require_api_key)])
 app.include_router(feedback_router, dependencies=[Depends(require_api_key)])
 app.include_router(catalog_router, dependencies=[Depends(require_api_key)])
 app.include_router(automation_router, dependencies=[Depends(require_api_key)])
+app.include_router(actions_router, dependencies=[Depends(require_api_key)])
 # WebSocket (interface visuelle future) : auth par token de requête, hors dépendance d'en-tête.
 app.include_router(assistant_ws_router)
 # Endpoints compatibles OpenAI : auth Bearer OU X-API-Key (drop-in Open WebUI/LocalAI/…)
