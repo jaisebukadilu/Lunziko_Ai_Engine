@@ -35,6 +35,8 @@ ai_engine/
     ├── tools/      Tool-calling : registre d'outils + boucle d'exécution (agents qui agissent)
     ├── mcp/        Model Context Protocol : serveur (expose les outils) + client (importe des serveurs externes)
     ├── context/    Couche de Contexte : profil & habitudes + état applicatif live + assembleur unifié
+    ├── feedback/   Retours utilisateur (up/down + corrections) → stats + few-shot
+    ├── catalog/    Schémas de données publiés par les apps + résolution sémantique
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -69,6 +71,12 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   écran/brouillon/erreur, TTL, purge à la lecture), et un **assembleur** (A-15) qui unifie profil + habitudes +
   activité + état live + connaissance + app écosystème sous budget, avec contexte **temporel/spatial**, et
   produit un bloc `system` prêt à injecter. Cf. `CONTEXT_LAYER_ARCHITECTURE.md`.
+- **Feedback ✅ (A-18)** (`/v1/feedback`, `/v1/feedback/{stats,corrections}`) — corrections/validations (up/down +
+  correction) persistées → **statistiques de satisfaction** + **few-shot** réutilisable (`as_fewshot`) pour
+  affiner les réponses futures.
+- **Catalogue de schémas ✅ (A-17)** (`/v1/catalog/{register,schemas,resolve}`) — les apps publient leurs
+  **schémas de données** (champs/types/description) ; **résolution sémantique** pour retrouver le schéma
+  pertinent à partir d'une question. L'IA comprend les données manipulées.
 - **MCP ✅ (A-7)** (`POST /mcp` JSON-RPC 2.0, `GET /mcp`, `POST /v1/mcp/import`) — **serveur MCP** exposant les
   outils de l'AI Engine (`initialize`/`tools/list`/`tools/call`) → consommable par Claude Desktop / Cline /
   Continue ; **client MCP** qui consomme un serveur MCP externe et **importe ses outils** dans le registre local
@@ -181,6 +189,8 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/mcp/import` | ✅ client MCP : importe les outils d'un serveur MCP externe |
 | `PUT/GET /v1/appstate` · `PUT/GET /v1/profile/{user}` · `.../habits` | ✅ état applicatif live (TTL) + profil & habitudes |
 | `POST /v1/context/assemble` | ✅ contexte unifié temps réel (profil+activité+état+éco, bloc system) |
+| `POST /v1/feedback` · `GET .../stats` · `.../corrections` | ✅ retours utilisateur → satisfaction + few-shot |
+| `POST /v1/catalog/{register,resolve}` · `GET .../schemas` | ✅ schémas de données + résolution sémantique |
 
 ## Persistance & indépendance
 
