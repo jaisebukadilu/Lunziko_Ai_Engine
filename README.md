@@ -101,7 +101,8 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   (intent→contexte→décomposition→sélection de Brains→plan, exécution best-effort + validation), **AI Blackboard**
   (état de tâche partagé), **Task Intelligence** (décompose un objectif), **Validation Engine** (checks par type),
   **Evaluation Engine** (score/qualité) et **App Requirements** (chaque app déclare ses besoins en Brains/Engines,
-  croisés avec le registre écosystème et injectés dans le plan de l'orchestrateur).
+  croisés avec le registre écosystème et injectés dans le plan de l'orchestrateur). **Collaboration Brain-to-Brain** :
+  pipeline séquentiel où chaque cerveau consomme les sorties des précédents via le Blackboard (`plan.collaboration`).
 - **Action Registry ✅** (`/v1/actions/{register,invoke}`, `GET /v1/actions`) — les apps **déclarent leurs
   actions exécutables** (créer une facture, envoyer un message…) avec un schéma d'arguments ; l'AI Engine les
   découvre, **valide** les arguments et produit une **instruction d'action structurée** (deep-link, executor,

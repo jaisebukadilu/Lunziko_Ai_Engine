@@ -55,14 +55,25 @@ class AIOrchestrator:
             except Exception:
                 app_req = None
 
+        # Collaboration Brain-to-Brain : pipeline séquentiel où chaque étape peut consommer
+        # les sorties des précédentes (via le Blackboard partagé).
+        collaboration = [
+            {"step": st["id"], "brain": st["brain"],
+             "consumes": [p["id"] for p in subtasks[:i]],
+             "produces": f"artifact:{st['id']}"}
+            for i, st in enumerate(subtasks)
+        ]
+
         bb = get_blackboard()
         task = bb.create(goal, user_id=user_id, app=app)
         bb.update(task["id"], plan=subtasks, context=context or {},
-                  decisions=[{"intent": intent, "brains": brains_used, "app_requirements": app_req}])
+                  decisions=[{"intent": intent, "brains": brains_used, "app_requirements": app_req,
+                              "collaboration": collaboration}])
         return {
             "task_id": task["id"], "goal": goal, "intent": intent,
             "brains": [{"id": b, "status": (reg.get(b) or {}).get("status", "active")} for b in brains_used],
             "engines": engines_used, "plan": subtasks,
+            "collaboration": collaboration,
             "app_requirements": app_req,
             "context": {"available": context is not None},
         }
@@ -79,6 +90,7 @@ class AIOrchestrator:
             system_block = (rec.get("context") or {}).get("system_block", "")
 
         results = []
+        prior_outputs: list[str] = []  # collaboration : sorties des Brains précédents
         for st in planned["plan"]:
             brain = reg.get(st["brain"]) or {}
             if brain.get("status") != "active":
@@ -88,6 +100,9 @@ class AIOrchestrator:
                 continue
             system = (f"Tu es le {brain.get('name', st['brain'])}. "
                       f"Traite : {st['description']}.")
+            if prior_outputs:
+                system += ("\n\nRÉSULTATS DES CERVEAUX PRÉCÉDENTS (à réutiliser) :\n"
+                           + "\n---\n".join(prior_outputs[-2:]))
             if system_block:
                 system += "\n\n" + system_block
             try:
@@ -103,6 +118,7 @@ class AIOrchestrator:
                        "content": content, "validation": v}
                 bb.append(tid, "artifacts", {"subtask": st["id"], "type": vtype})
                 bb.append(tid, "validation", v)
+                prior_outputs.append(f"[{st['brain']}] {content}")
             except Exception as e:
                 out = {"subtask": st["id"], "brain": st["brain"], "status": "error", "error": str(e)}
                 bb.append(tid, "errors", {"subtask": st["id"], "error": str(e)})
