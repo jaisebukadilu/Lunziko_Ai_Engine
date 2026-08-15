@@ -78,6 +78,29 @@ class AIOrchestrator:
             "context": {"available": context is not None},
         }
 
+    async def _delegate_graphics(self, st: dict) -> dict:
+        """Route une sous-tâche multimédia vers le Lunziko Graphics Engine (si branché)."""
+        from ai_engine.modules.graphics.client import BRAIN_TO_GROUPS, GraphicsEngineClient
+
+        client = GraphicsEngineClient()
+        groups = BRAIN_TO_GROUPS.get(st["brain"], [])
+        base = {"subtask": st["id"], "brain": st["brain"], "engine": "graphics", "groups": groups,
+                "endpoints_hint": [f"/{g}/*" for g in groups]}
+        if not client.available():
+            return {**base, "status": "deferred",
+                    "reason": "Graphics Engine non branché (AE_GRAPHICS_ENGINE_URL)"}
+        ping = client.ping()
+        if not ping.get("reachable"):
+            return {**base, "status": "error", "reason": "Graphics Engine injoignable", "ping": ping}
+        agents = None
+        try:
+            res = await client.call("GET", "/agents")
+            agents = res.get("agents", res)
+        except Exception:
+            agents = None
+        return {**base, "status": "delegated",
+                "agents_available": len(agents) if isinstance(agents, list) else None}
+
     async def run(self, goal: str, *, user_id: str | None = None, app: str | None = None,
                   provider: str | None = None, max_tokens: int = 800) -> dict:
         planned = await self.plan(goal, user_id=user_id, app=app)
@@ -89,10 +112,18 @@ class AIOrchestrator:
         if rec:
             system_block = (rec.get("context") or {}).get("system_block", "")
 
+        from ai_engine.modules.graphics.client import GRAPHICS_BACKED_BRAINS
+
         results = []
         prior_outputs: list[str] = []  # collaboration : sorties des Brains précédents
         for st in planned["plan"]:
             brain = reg.get(st["brain"]) or {}
+            # Délégation Graphics : les Brains multimédias routent vers le Graphics Engine.
+            if st["brain"] in GRAPHICS_BACKED_BRAINS:
+                deleg = await self._delegate_graphics(st)
+                results.append(deleg)
+                bb.append(tid, "outputs", {"subtask": st["id"], "status": deleg["status"]})
+                continue
             if brain.get("status") != "active":
                 results.append({"subtask": st["id"], "brain": st["brain"],
                                 "status": "deferred", "reason": "Brain non actif (modèle à venir)"})
@@ -125,10 +156,11 @@ class AIOrchestrator:
             results.append(out)
             bb.append(tid, "outputs", {"subtask": st["id"], "status": out["status"]})
 
-        done = sum(1 for r in results if r["status"] == "done")
+        done = sum(1 for r in results if r["status"] in ("done", "delegated"))
         bb.update(tid, status="completed" if done else "partial")
         return {"task_id": tid, "goal": goal, "results": results,
                 "summary": {"subtasks": len(results), "done": done,
+                            "delegated": sum(1 for r in results if r["status"] == "delegated"),
                             "deferred": sum(1 for r in results if r["status"] == "deferred"),
                             "errors": sum(1 for r in results if r["status"] == "error")}}
 
