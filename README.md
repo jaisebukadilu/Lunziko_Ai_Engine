@@ -34,6 +34,7 @@ ai_engine/
     ├── handoff/    Redirection inter-apps + transfert/ouverture de fichiers vers l'app adaptée
     ├── tools/      Tool-calling : registre d'outils + boucle d'exécution (agents qui agissent)
     ├── mcp/        Model Context Protocol : serveur (expose les outils) + client (importe des serveurs externes)
+    ├── context/    Couche de Contexte : profil & habitudes + état applicatif live + assembleur unifié
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -62,6 +63,12 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
 - **A-8 ✅** **Endpoints compatibles OpenAI** (`/v1/chat/completions` avec pseudo-streaming SSE, `/v1/embeddings`,
   `/v1/models`), auth `Authorization: Bearer` ou `X-API-Key` → **drop-in Open WebUI / LocalAI / Continue / Cline**,
   réutilise le ProviderManager (routage+fallback). Vrai streaming token-par-token = suivi. Cf. `../INTEROP_AND_PLATFORMS.md`.
+- **Couche de Contexte Unifié ✅ (A-14→A-16)** (`/v1/context/assemble`, `/v1/appstate`, `/v1/profile/*`) — l'IA
+  d'application dispose d'un **contexte temps réel** : **profil & habitudes** (A-14, habitudes dérivées de
+  l'activité ; identité/RBAC = Platform consommée, jamais recodée), **état applicatif live éphémère** (A-16,
+  écran/brouillon/erreur, TTL, purge à la lecture), et un **assembleur** (A-15) qui unifie profil + habitudes +
+  activité + état live + connaissance + app écosystème sous budget, avec contexte **temporel/spatial**, et
+  produit un bloc `system` prêt à injecter. Cf. `CONTEXT_LAYER_ARCHITECTURE.md`.
 - **MCP ✅ (A-7)** (`POST /mcp` JSON-RPC 2.0, `GET /mcp`, `POST /v1/mcp/import`) — **serveur MCP** exposant les
   outils de l'AI Engine (`initialize`/`tools/list`/`tools/call`) → consommable par Claude Desktop / Cline /
   Continue ; **client MCP** qui consomme un serveur MCP externe et **importe ses outils** dans le registre local
@@ -172,6 +179,8 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/agent/act` | ✅ boucle tool-calling (le modèle appelle des outils puis répond) |
 | `POST /mcp` · `GET /mcp` | ✅ serveur MCP (JSON-RPC : initialize/tools.list/tools.call) |
 | `POST /v1/mcp/import` | ✅ client MCP : importe les outils d'un serveur MCP externe |
+| `PUT/GET /v1/appstate` · `PUT/GET /v1/profile/{user}` · `.../habits` | ✅ état applicatif live (TTL) + profil & habitudes |
+| `POST /v1/context/assemble` | ✅ contexte unifié temps réel (profil+activité+état+éco, bloc system) |
 
 ## Persistance & indépendance
 
