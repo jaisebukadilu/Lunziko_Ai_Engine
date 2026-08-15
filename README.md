@@ -1,5 +1,11 @@
 # Lunziko AI Engine
 
+> **Architecture : LAIA — Lunziko AI Intelligence Architecture** (Multi-Brain / Multi-Engine).
+> Système d'intelligence **orchestrée** de l'écosystème : un **Orchestrator** coordonne des
+> **Brains** (cerveaux spécialisés), des **Engines** (les modules ci-dessous) et des **Tools** —
+> pour comprendre une tâche, choisir les capacités, collaborer entre apps, exécuter et **valider**.
+> Construit AU-DESSUS de l'existant, sans le remplacer. Cf. `LAIA_ARCHITECTURE.md`.
+
 IA **autonome et complète** de l'écosystème Lunziko : gateway + provider manager (cloud + local),
 mémoire, RAG, agents, workflows, et le module **Voix & Traduction**.
 
@@ -39,6 +45,7 @@ ai_engine/
     ├── catalog/    Schémas de données publiés par les apps + résolution sémantique
     ├── automation/ Moteur de flux par nœuds (chaîne des outils ; clean-room n8n)
     ├── actions/    Action Registry : les apps déclarent leurs actions exécutables (invocation validée)
+    ├── orchestrator/ LAIA AI-CORE : Brain/Engine Registry + Orchestrator + Blackboard + Validation
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -87,6 +94,12 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   Surface commune : chat/embed/RAG/mémoire/agent/**act (outils)**/écosystème/activité/contexte/assistant/handoff/
   neural/data/automation + `get`/`post` génériques. SDK Dart validé (`dart analyze` OK) ; Swift/Kotlin écrits en
   miroir (non compilés ici, toolchains absentes).
+- **LAIA AI-CORE ✅** (`/v1/brains*`, `/v1/engines*`, `/v1/orchestrator/{plan,run}`, `/v1/blackboard*`,
+  `/v1/validate`) — la **couche méta** au-dessus des modules : **Brain Registry** (catalogue de 16 cerveaux :
+  text/reasoning/code/data/research/document/ui_ux/language actifs + vision/image/video/audio/music/voice/3d/cad
+  déclarés, manifestes + résolution), **Engine Registry** (mappe les modules existants), **AI Orchestrator**
+  (intent→contexte→décomposition→sélection de Brains→plan, exécution best-effort + validation), **AI Blackboard**
+  (état de tâche partagé), **Task Intelligence** (décompose un objectif) et **Validation Engine** (checks par type).
 - **Action Registry ✅** (`/v1/actions/{register,invoke}`, `GET /v1/actions`) — les apps **déclarent leurs
   actions exécutables** (créer une facture, envoyer un message…) avec un schéma d'arguments ; l'AI Engine les
   découvre, **valide** les arguments et produit une **instruction d'action structurée** (deep-link, executor,
@@ -211,6 +224,10 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/catalog/{register,resolve}` · `GET .../schemas` | ✅ schémas de données + résolution sémantique |
 | `POST /v1/automation/flows` · `.../{name}/run` · `GET .../runs` | ✅ flux de nœuds chaînant les outils (persistés) |
 | `POST /v1/actions/{register,invoke}` · `GET /v1/actions` | ✅ actions d'app déclarées + invocation validée |
+| `GET /v1/brains` · `POST /v1/brains/{resolve,register}` | ✅ catalogue de cerveaux (LAIA) + résolution |
+| `GET /v1/engines` · `GET /v1/engines/{id}` | ✅ moteurs LAIA (mappe les modules existants) |
+| `POST /v1/orchestrator/{plan,run}` | ✅ orchestration : décompose → assigne Brains → (exécute) → valide |
+| `GET /v1/blackboard/tasks/{id}` · `POST /v1/validate` | ✅ état de tâche partagé + validation d'artefacts |
 
 ## Persistance & indépendance
 
