@@ -38,8 +38,8 @@ ENGINES = [
     _e("audio", "Audio Engine", "Pipeline audio", "—", status="planned"),
     _e("3d", "3D Intelligence Engine", "Pipeline 3D", "graphics-engine", status="planned"),
     _e("ui_generation", "UI Generation Engine", "Génération d'interfaces", "code+design-system", status="planned"),
-    _e("evaluation", "Evaluation Engine", "Benchmark/qualité", "—", status="planned"),
-    _e("safety", "Safety Engine", "Garde-fous", "—", status="planned"),
+    _e("evaluation", "Evaluation Engine", "Benchmark/qualité", "orchestrator.evaluation"),
+    _e("safety", "Safety Engine", "Garde-fous (PII/injection/modération)", "safety"),
 ]
 
 _BY_ID = {e["id"]: e for e in ENGINES}

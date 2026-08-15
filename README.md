@@ -49,6 +49,7 @@ ai_engine/
     ├── codeexec/   Code Execution Engine (A-11) : safe-eval (ON) + sandbox subprocess (opt-in)
     ├── graphics/   Branchement au Lunziko Graphics Engine (client JSON-RPC, active les Brains 3D/image)
     ├── connectors/ Bases de connaissances unifiées : ingestion multi-sources + recherche cross-namespace
+    ├── safety/     Safety Engine (garde-fous) : redaction PII + injection de prompt + modération
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -97,6 +98,10 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   Surface commune : chat/embed/RAG/mémoire/agent/**act (outils)**/écosystème/activité/contexte/assistant/handoff/
   neural/data/automation + `get`/`post` génériques. SDK Dart validé (`dart analyze` OK) ; Swift/Kotlin écrits en
   miroir (non compilés ici, toolchains absentes).
+- **Safety Engine ✅ (garde-fous LAIA)** (`/v1/safety/{check,redact}`) — filtrage entrée/sortie : **redaction PII**
+  (e-mails, téléphones, IBAN, cartes avec **validation Luhn**), détection d'**injection de prompt** (« ignore
+  previous instructions », « reveal system prompt »…), modération heuristique. Offline, complète Validation
+  (structure) et Evaluation (qualité) par la dimension **sécurité**.
 - **Connecteurs RAG ✅** (`/v1/connectors/{types,ingest,namespaces,search}`) — **bases de connaissances unifiées** :
   ingère documents / historiques de chat / e-mails / fichiers / notes dans le RAG (avec métadonnées de source)
   et **recherche unifiée cross-namespace** (fusion des résultats par score, avec attribution de source). Construit
@@ -254,6 +259,7 @@ Puis : http://localhost:8770/docs · http://localhost:8770/health
 | `POST /v1/code-exec/{eval,run}` · `GET .../status` | ✅ safe-eval (sûr) + sandbox subprocess (opt-in) |
 | `GET /v1/graphics/{status,brains}` · `POST .../call` | ✅ branchement Graphics Engine (JSON-RPC) |
 | `POST /v1/connectors/{ingest,search}` · `GET .../{types,namespaces}` | ✅ ingestion multi-sources + recherche unifiée cross-namespace |
+| `POST /v1/safety/{check,redact}` | ✅ garde-fous : PII (Luhn) + injection de prompt + modération |
 
 ## Persistance & indépendance
 
