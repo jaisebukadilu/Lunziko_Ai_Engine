@@ -82,7 +82,22 @@ def tts(req: TTSRequest) -> dict:
 async def stt(audio: UploadFile = File(...), lang: str = Form("auto")) -> dict:
     if audio.content_type and not audio.content_type.startswith("audio"):
         raise HTTPException(status_code=400, detail="Fichier audio attendu")
-    raise HTTPException(status_code=501, detail="STT: inférence prévue en phase V-2")
+    from ai_engine.modules.voice.stt_engine import stt_available, transcribe
+    if not stt_available():
+        raise HTTPException(status_code=501,
+                            detail="STT: installer l'extra `voice-stt` (faster-whisper)")
+    data = await audio.read()
+    try:
+        return transcribe(data, lang=lang)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"STT: {e}")
+
+
+@router.get("/stt/status")
+def stt_status() -> dict:
+    from ai_engine.modules.voice.stt_engine import stt_available
+    from ai_engine.config import get_settings
+    return {"available": stt_available(), "model": get_settings().ae_stt_model, "engine": "faster-whisper"}
 
 
 @router.post("/translate")

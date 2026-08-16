@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     ae_code_exec_timeout: int = 10          # secondes (wall-clock) du sous-processus
     ae_code_exec_max_output: int = 20000    # caractères max capturés
 
+    # Voix — STT (Whisper via faster-whisper). Modèle : tiny|base|small|medium|large-v3.
+    # Actif si le paquet `faster-whisper` est installé (extra `voice-stt`). Modèle téléchargé au 1er usage.
+    ae_stt_model: str = "base"
+
     # Search Engine (web). Backend `duckduckgo` sans clé par défaut ; `google` (CSE) si clé+cx.
     ae_search_backend: str = "auto"   # auto | duckduckgo | google
     ae_google_api_key: str = ""

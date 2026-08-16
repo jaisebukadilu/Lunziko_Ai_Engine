@@ -236,7 +236,8 @@ Guide complet (Docker Hub, volume de persistance, branchement Graphics Engine) :
 | `POST /v1/code/{analyze,debug,explain}` | ✅ modèles code locaux (Ollama) en priorité |
 | `POST /v1/chat/completions` · `/v1/embeddings` · `GET /v1/models` | ✅ **format OpenAI** (Bearer/X-API-Key) |
 | `GET /v1/voice/voices` · `/v1/voice/packs` (+ install/uninstall) | ✅ |
-| `POST /v1/voice/{tts,stt,translate,speak}` | ⏳ 501 (V-1 → V-3) |
+| `POST /v1/voice/stt` · `GET /v1/voice/stt/status` | ✅ **STT réel (Whisper via faster-whisper)** — extra `voice-stt` |
+| `POST /v1/voice/{tts,translate,speak}` | ⏳ 501 (V-1 TTS / V-3 MT) |
 | `GET /v1/ecosystem/status` · `/v1/ecosystem/apps` · `/apps/{slug}` | ✅ registre Lunziko indexé (apps + fonctions) |
 | `POST /v1/ecosystem/sync` · `/v1/ecosystem/search` | ✅ (re)sync du registre + recherche sémantique d'apps |
 | `POST /v1/activity/{log,log-batch,search}` · `GET .../timeline` · `.../summary` | ✅ journal d'actions (detail chiffré) + recherche sémantique + résumé |
