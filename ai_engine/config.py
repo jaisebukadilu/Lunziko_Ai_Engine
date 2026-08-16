@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     ae_code_exec_timeout: int = 10          # secondes (wall-clock) du sous-processus
     ae_code_exec_max_output: int = 20000    # caractères max capturés
 
+    # Search Engine (web). Backend `duckduckgo` sans clé par défaut ; `google` (CSE) si clé+cx.
+    ae_search_backend: str = "auto"   # auto | duckduckgo | google
+    ae_google_api_key: str = ""
+    ae_google_cse_id: str = ""
+
     # Graphics Engine (moteur de rendu, dépôt séparé) : API REST FastAPI (défaut 127.0.0.1:8000).
     # Vide => non branché (les Brains image/vision/video/3d restent « déclarés »).
     # ex : http://127.0.0.1:8000 . Auth optionnelle via X-API-Key (LUNZIKO_API_KEY côté moteur).

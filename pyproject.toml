@@ -29,7 +29,8 @@ secure = ["cryptography>=43"]                         # mémoire chiffrée AES-2
 neural = ["numpy>=1.26", "scikit-learn>=1.4"]         # backend ML classique (routeur d'intention)
 neural-deep = ["torch>=2.2"]                          # réseaux profonds + GPU (optionnel)
 neural-hf = ["transformers>=4.44", "sentence-transformers>=3.0"]  # modèles pré-entraînés (rerank/embeddings)
-dev = ["pytest>=8", "ruff>=0.6"]
+search = ["ddgs>=6"]                                  # recherche web sans clé (DuckDuckGo)
+dev = ["pytest>=8", "ruff>=0.6", "ddgs>=6"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

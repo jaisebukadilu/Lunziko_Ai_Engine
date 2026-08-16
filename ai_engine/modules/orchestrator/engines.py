@@ -16,7 +16,7 @@ ENGINES = [
     _e("orchestrator", "AI Orchestrator Engine", "Chef d'orchestre", "orchestrator"),
     _e("inference", "Inference Engine", "Exécution des modèles (cloud/local/natif)", "provider+neural.inference"),
     _e("rag", "RAG Engine", "Recherche augmentée", "rag"),
-    _e("search", "Search Engine", "Recherche locale (web = planned)", "rag+ecosystem"),
+    _e("search", "Search Engine", "Recherche web (DuckDuckGo sans clé / Google CSE) + locale", "search+rag"),
     _e("memory", "Memory Engine", "Mémoire chiffrée", "memory"),
     _e("knowledge", "Knowledge Engine", "Connaissances & graphes", "knowledge"),
     _e("context", "Context Engine", "Contexte unifié temps réel", "context"),

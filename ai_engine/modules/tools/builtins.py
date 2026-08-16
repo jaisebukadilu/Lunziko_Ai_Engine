@@ -40,6 +40,13 @@ async def _activity_timeline(args: dict) -> object:
     return get_activity_engine().timeline(args["user_id"], limit=int(args.get("limit", 5)))
 
 
+async def _web_search(args: dict) -> object:
+    from ai_engine.modules.search.engine import get_search_engine
+
+    res = await get_search_engine().search(args["query"], k=int(args.get("k", 5)))
+    return res.get("results", res)
+
+
 _BUILTINS = [
     (ToolSpec(
         name="ecosystem_search",
@@ -77,6 +84,13 @@ _BUILTINS = [
             "user_id": {"type": "string"}, "limit": {"type": "integer", "default": 5}},
             "required": ["user_id"]}),
      _activity_timeline),
+    (ToolSpec(
+        name="web_search",
+        description="Recherche sur le web (résultats titre/url/extrait) pour le Research Brain.",
+        parameters={"type": "object", "properties": {
+            "query": {"type": "string"}, "k": {"type": "integer", "default": 5}},
+            "required": ["query"]}),
+     _web_search),
 ]
 
 

@@ -50,6 +50,7 @@ ai_engine/
     ├── graphics/   Branchement au Lunziko Graphics Engine (client JSON-RPC, active les Brains 3D/image)
     ├── connectors/ Bases de connaissances unifiées : ingestion multi-sources + recherche cross-namespace
     ├── safety/     Safety Engine (garde-fous) : redaction PII + injection de prompt + modération
+    ├── search/     Search Engine web (DuckDuckGo sans clé / Google CSE optionnel)
     └── voice/      STT · MT · TTS · 10 voix · packs de langues (18)
 
 sdk/typescript/     Client @lunziko/ai-engine (fetch) pour Platform / web / apps
@@ -98,6 +99,9 @@ core/backends/      + postgres_storage · pg_vector (couplage optionnel Platform
   Surface commune : chat/embed/RAG/mémoire/agent/**act (outils)**/écosystème/activité/contexte/assistant/handoff/
   neural/data/automation + `get`/`post` génériques. SDK Dart validé (`dart analyze` OK) ; Swift/Kotlin écrits en
   miroir (non compilés ici, toolchains absentes).
+- **Search Engine web ✅** (`/v1/search`, `/v1/search/status`) — recherche web **sans clé** (DuckDuckGo, backend
+  par défaut) + **Google Custom Search** optionnel (`AE_GOOGLE_API_KEY` + `AE_GOOGLE_CSE_ID`). Résultats
+  normalisés {title, url, snippet} ; alimente le **Research Brain** et l'outil `web_search` (agents).
 - **Safety Engine ✅ (garde-fous LAIA)** (`/v1/safety/{check,redact}`) — filtrage entrée/sortie : **redaction PII**
   (e-mails, téléphones, IBAN, cartes avec **validation Luhn**), détection d'**injection de prompt** (« ignore
   previous instructions », « reveal system prompt »…), modération heuristique. Offline, complète Validation
@@ -268,6 +272,7 @@ Guide complet (Docker Hub, volume de persistance, branchement Graphics Engine) :
 | `GET /v1/graphics/{status,brains}` · `POST .../call` | ✅ branchement Graphics Engine (JSON-RPC) |
 | `POST /v1/connectors/{ingest,search}` · `GET .../{types,namespaces}` | ✅ ingestion multi-sources + recherche unifiée cross-namespace |
 | `POST /v1/safety/{check,redact}` | ✅ garde-fous : PII (Luhn) + injection de prompt + modération |
+| `POST /v1/search` · `GET /v1/search/status` | ✅ recherche web (DuckDuckGo sans clé / Google CSE) |
 
 ## Persistance & indépendance
 
