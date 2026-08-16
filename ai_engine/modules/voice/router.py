@@ -6,7 +6,7 @@ Inférence (tts/stt/translate/speak) : validation réelle + 501 jusqu'aux phases
 
 from __future__ import annotations
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 
 from ai_engine.modules.voice.model_store import get_voice_store
 from ai_engine.modules.voice.schemas import LanguagePack, TranslateRequest, TTSRequest, Voice
@@ -67,15 +67,28 @@ def uninstall_pack(pack_id: str) -> dict:
 
 # --- Inférence (V-1 → V-3) ----------------------------------------------
 @router.post("/tts")
-def tts(req: TTSRequest) -> dict:
+def tts(req: TTSRequest):
     if req.voice not in VOICE_IDS:
         raise HTTPException(status_code=400, detail=f"Voix inconnue: {req.voice}")
-    if req.lang not in get_voice_store().installed_ids():
-        raise HTTPException(
-            status_code=409,
-            detail=f"Pack '{req.lang}' non installé. POST /v1/voice/packs/{req.lang}/install d'abord.",
-        )
-    raise HTTPException(status_code=501, detail="TTS: inférence prévue en phase V-1")
+    from ai_engine.modules.voice.tts_engine import synthesize, tts_available
+    if not tts_available():
+        raise HTTPException(status_code=501,
+                            detail="TTS: installer l'extra `voice-tts` (piper-tts) + une voix .onnx")
+    try:
+        wav, model = synthesize(req.text, lang=req.lang or "auto")
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"TTS: {e}")
+    return Response(content=wav, media_type="audio/wav",
+                    headers={"X-Voice-Model": model, "X-Audio-Bytes": str(len(wav))})
+
+
+@router.get("/tts/status")
+def tts_status() -> dict:
+    from ai_engine.modules.voice.tts_engine import list_voice_models, tts_available, voices_dir
+    return {"available": tts_available(), "voices_dir": str(voices_dir()),
+            "voices": list_voice_models(), "engine": "piper"}
 
 
 @router.post("/stt")

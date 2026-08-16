@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     # Actif si le paquet `faster-whisper` est installé (extra `voice-stt`). Modèle téléchargé au 1er usage.
     ae_stt_model: str = "base"
 
+    # Voix — TTS (Piper). Actif si `piper-tts` installé (extra `voice-tts`) ET une voix .onnx présente.
+    # Télécharger une voix : python -m piper.download_voices fr_FR-siwis-medium --data-dir <dir>
+    ae_tts_voices_dir: str = ""        # vide => <home>/voice/piper
+    ae_tts_default_voice: str = ""     # vide => 1re voix .onnx trouvée
+
     # Search Engine (web). Backend `duckduckgo` sans clé par défaut ; `google` (CSE) si clé+cx.
     ae_search_backend: str = "auto"   # auto | duckduckgo | google
     ae_google_api_key: str = ""

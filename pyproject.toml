@@ -31,6 +31,7 @@ neural-deep = ["torch>=2.2"]                          # réseaux profonds + GPU 
 neural-hf = ["transformers>=4.44", "sentence-transformers>=3.0"]  # modèles pré-entraînés (rerank/embeddings)
 search = ["ddgs>=6"]                                  # recherche web sans clé (DuckDuckGo)
 voice-stt = ["faster-whisper>=1.0"]                   # STT Whisper (V-1) — modèle téléchargé au 1er usage
+voice-tts = ["piper-tts>=1.7"]                        # TTS Piper (V-1) — voix .onnx à télécharger
 dev = ["pytest>=8", "ruff>=0.6", "ddgs>=6"]
 
 [tool.pytest.ini_options]
