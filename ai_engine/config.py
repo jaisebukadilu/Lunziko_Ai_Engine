@@ -89,6 +89,11 @@ class Settings(BaseSettings):
     ae_mt_backend: str = "auto"        # auto | madlad | llm
     ae_mt_model: str = "google/madlad400-3b-mt"  # modèle MADLAD-400 (Apache-2.0)
 
+    # Serveur MCP Hugging Face (outils modèles/datasets) — consommé par le client MCP.
+    # Token HF (scope read) requis ; vide => intégration inactive. Bearer envoyé en en-tête.
+    ae_hf_mcp_url: str = "https://huggingface.co/mcp"
+    ae_hf_mcp_token: str = ""
+
     # Search Engine (web). Backend `duckduckgo` sans clé par défaut ; `google` (CSE) si clé+cx.
     ae_search_backend: str = "auto"   # auto | duckduckgo | google
     ae_google_api_key: str = ""

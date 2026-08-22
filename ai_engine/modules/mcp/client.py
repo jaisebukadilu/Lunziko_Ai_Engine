@@ -15,23 +15,52 @@ from ai_engine.modules.provider.base import ToolSpec
 Send = Callable[[dict], Awaitable[dict]]
 
 
-def _http_send(base_url: str) -> Send:
+def _parse_response(resp) -> dict:
+    """Réponse JSON classique OU flux SSE (Streamable HTTP, ex. serveur MCP Hugging Face)."""
+    import json
+
+    ctype = resp.headers.get("content-type", "")
+    if "text/event-stream" in ctype:
+        # Extrait le dernier objet JSON d'une ligne `data: {...}`.
+        payload = None
+        for line in resp.text.splitlines():
+            line = line.strip()
+            if line.startswith("data:"):
+                data = line[5:].strip()
+                if data and data != "[DONE]":
+                    try:
+                        payload = json.loads(data)
+                    except Exception:
+                        pass
+        if payload is None:
+            raise RuntimeError("réponse SSE MCP sans objet JSON exploitable")
+        return payload
+    return resp.json()
+
+
+def _http_send(base_url: str, headers: dict | None = None) -> Send:
     import httpx
+
+    hdrs = {"content-type": "application/json",
+            "accept": "application/json, text/event-stream"}
+    if headers:
+        hdrs.update(headers)
 
     async def send(request: dict) -> dict:
         async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(base_url, json=request)
+            resp = await client.post(base_url, json=request, headers=hdrs)
         resp.raise_for_status()
-        return resp.json()
+        return _parse_response(resp)
 
     return send
 
 
 class MCPClient:
-    def __init__(self, *, base_url: str | None = None, send: Send | None = None) -> None:
+    def __init__(self, *, base_url: str | None = None, send: Send | None = None,
+                 headers: dict | None = None) -> None:
         if send is None and base_url is None:
             raise ValueError("fournir base_url ou send")
-        self._send = send or _http_send(base_url)  # type: ignore[arg-type]
+        self._send = send or _http_send(base_url, headers)  # type: ignore[arg-type]
         self._ids = itertools.count(1)
 
     async def _call(self, method: str, params: dict | None = None) -> dict:

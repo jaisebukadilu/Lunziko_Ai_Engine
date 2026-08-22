@@ -55,3 +55,50 @@ def test_client_against_own_server():
         assert "texts_out" in res
 
     asyncio.run(scenario())
+
+
+def test_parse_sse_response():
+    """Le client MCP tolère un flux SSE (Streamable HTTP, ex. serveur HF)."""
+    from ai_engine.modules.mcp.client import _parse_response
+
+    class FakeResp:
+        headers = {"content-type": "text/event-stream"}
+        text = 'event: message\ndata: {"jsonrpc":"2.0","id":1,"result":{"tools":[]}}\n\n'
+        def json(self):  # non utilisé en SSE
+            raise AssertionError("ne doit pas être appelé en SSE")
+
+    out = _parse_response(FakeResp())
+    assert out["result"]["tools"] == []
+
+
+def test_import_hf_style_with_injected_send():
+    """Import d'un serveur MCP distant (façon HF) via un transport injecté + prefix hf."""
+    import asyncio
+
+    from ai_engine.modules.mcp.client import MCPClient
+    from ai_engine.modules.tools.registry import ToolRegistry
+
+    async def hf_send(req: dict) -> dict:
+        m = req.get("method")
+        if m == "initialize":
+            return {"jsonrpc": "2.0", "id": req["id"],
+                    "result": {"serverInfo": {"name": "hf-mcp-server"}, "capabilities": {}}}
+        if m == "tools/list":
+            return {"jsonrpc": "2.0", "id": req["id"], "result": {"tools": [
+                {"name": "model_search", "description": "Search HF models",
+                 "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}}}]}}
+        if m == "tools/call":
+            return {"jsonrpc": "2.0", "id": req["id"],
+                    "result": {"content": [{"type": "text", "text": "unsloth/Qwen2.5-0.5B-Instruct"}]}}
+        return {"jsonrpc": "2.0", "id": req["id"], "error": {"code": -32601, "message": "no"}}
+
+    async def scenario():
+        c = MCPClient(send=hf_send)
+        await c.initialize()
+        reg = ToolRegistry()
+        imported = await c.import_into_registry(reg, prefix="hf")
+        assert "hf__model_search" in imported
+        res = await reg.execute("hf__model_search", {"query": "qwen"})
+        assert "Qwen2.5" in res
+
+    asyncio.run(scenario())

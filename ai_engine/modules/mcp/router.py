@@ -26,6 +26,15 @@ async def mcp_jsonrpc(request: dict) -> dict:
 class ImportRequest(BaseModel):
     base_url: str = Field(min_length=1)
     prefix: str = "mcp"
+    headers: dict = Field(default_factory=dict)   # ex. {"Authorization": "Bearer <token>"}
+    token: str = ""                                # raccourci -> Authorization: Bearer <token>
+
+
+def _with_token(headers: dict, token: str) -> dict:
+    h = dict(headers or {})
+    if token:
+        h["Authorization"] = f"Bearer {token}"
+    return h
 
 
 @router.post("/v1/mcp/import")
@@ -35,9 +44,33 @@ async def mcp_import(req: ImportRequest) -> dict:
     from ai_engine.modules.tools.registry import get_tool_registry
 
     try:
-        client = MCPClient(base_url=req.base_url)
+        client = MCPClient(base_url=req.base_url, headers=_with_token(req.headers, req.token))
         await client.initialize()
         imported = await client.import_into_registry(get_tool_registry(), prefix=req.prefix)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"mcp.import: {e}")
     return {"imported": imported, "count": len(imported)}
+
+
+@router.post("/v1/mcp/import-hf")
+async def mcp_import_hf(token: str = "") -> dict:
+    """Importe les outils du serveur MCP Hugging Face (modèles/datasets) dans le registre.
+
+    Token pris dans la requête sinon dans la config (AE_HF_MCP_TOKEN). Préfixe `hf`.
+    """
+    from ai_engine.config import get_settings
+    from ai_engine.modules.mcp.client import MCPClient
+    from ai_engine.modules.tools.registry import get_tool_registry
+
+    s = get_settings()
+    tok = token or s.ae_hf_mcp_token
+    if not tok:
+        raise HTTPException(status_code=400,
+                            detail="token HF requis (AE_HF_MCP_TOKEN ou paramètre token)")
+    try:
+        client = MCPClient(base_url=s.ae_hf_mcp_url, headers={"Authorization": f"Bearer {tok}"})
+        await client.initialize()
+        imported = await client.import_into_registry(get_tool_registry(), prefix="hf")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"mcp.import-hf: {e}")
+    return {"server": s.ae_hf_mcp_url, "imported": imported, "count": len(imported)}
