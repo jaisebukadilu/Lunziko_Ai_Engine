@@ -43,19 +43,41 @@ def get_pack(pack_id: str) -> LanguagePack:
     return packs[pack_id]
 
 
-@router.post("/packs/{pack_id}/install", status_code=202)
-def install_pack(pack_id: str) -> dict:
-    store = get_voice_store()
-    if store.get_pack_meta(pack_id) is None:
+def _parse_components(components: str | None) -> tuple[str, ...]:
+    from ai_engine.modules.voice.pack_downloader import ALL_COMPONENTS, DEFAULT_COMPONENTS
+    if not components:
+        return DEFAULT_COMPONENTS
+    wanted = tuple(c.strip() for c in components.split(",") if c.strip())
+    bad = [c for c in wanted if c not in ALL_COMPONENTS]
+    if bad:
+        raise HTTPException(status_code=400, detail=f"Composants inconnus: {bad} (attendu: {ALL_COMPONENTS})")
+    return wanted
+
+
+@router.get("/packs/{pack_id}/plan")
+def plan_pack(pack_id: str, components: str | None = None) -> dict:
+    """Dry-run : ce qui serait téléchargé pour ce pack, sans rien récupérer."""
+    from ai_engine.modules.voice.pack_downloader import plan_pack as _plan
+    try:
+        return _plan(pack_id, components=_parse_components(components))
+    except KeyError:
         raise HTTPException(status_code=404, detail=f"Pack inconnu: {pack_id}")
-    version = "0.1.0"
-    store.register_pack(pack_id, version)
-    return {
-        "id": pack_id,
-        "status": "registered",
-        "version": version,
-        "note": "Métadonnées enregistrées. Téléchargement des modèles: phase V-4.",
-    }
+
+
+@router.post("/packs/{pack_id}/install", status_code=202)
+def install_pack(pack_id: str, components: str | None = None, dry_run: bool = False) -> dict:
+    """Télécharge (réellement, V-4) les composants du pack : `components=stt,tts[,mt]`.
+
+    STT/MT sont partagés multilingues ; TTS est la voix Piper propre à la langue.
+    Chaque composant n'est récupéré que si l'extra correspondant est installé.
+    """
+    from ai_engine.modules.voice.pack_downloader import install_pack as _install
+    try:
+        return _install(pack_id, components=_parse_components(components), dry_run=dry_run)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Pack inconnu: {pack_id}")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"install: {e}")
 
 
 @router.delete("/packs/{pack_id}")

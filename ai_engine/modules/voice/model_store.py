@@ -23,6 +23,13 @@ def load_catalog() -> dict[str, dict]:
     return {p["id"]: p for p in raw["packs"]}
 
 
+@lru_cache
+def load_shared() -> dict:
+    """Composants MULTILINGUES partagés (Whisper STT, MADLAD MT)."""
+    raw = json.loads(_CATALOG_FILE.read_text(encoding="utf-8"))
+    return raw.get("shared", {})
+
+
 class VoiceModelStore:
     """Accès au dossier <home>/voice et à son registry.json."""
 
@@ -59,12 +66,15 @@ class VoiceModelStore:
     def installed_ids(self) -> set[str]:
         return set(self._read_registry().get("installed", {}).keys())
 
-    def register_pack(self, pack_id: str, version: str) -> None:
+    def register_pack(self, pack_id: str, version: str, components: dict | None = None) -> None:
         reg = self._read_registry()
-        reg.setdefault("installed", {})[pack_id] = {
+        entry = {
             "version": version,
             "installed_at": datetime.now(timezone.utc).isoformat(),
         }
+        if components is not None:
+            entry["components"] = components
+        reg.setdefault("installed", {})[pack_id] = entry
         self._write_registry(reg)
         (self.packs_dir / pack_id).mkdir(exist_ok=True)
 
