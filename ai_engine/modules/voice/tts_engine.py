@@ -58,14 +58,45 @@ def _load(model: Path):
     return _CACHE[key]
 
 
-def synthesize(text: str, lang: str = "auto") -> tuple[bytes, str]:
-    """Retourne (wav_bytes, voice_model_name)."""
-    model = _pick_model(lang)
+def _resolve_model(lang: str, voice_id: str | None) -> Path | None:
+    """Résout le modèle .onnx : voix fine-tunée (voice_id+lang) sinon base par langue."""
+    if voice_id:
+        from ai_engine.modules.voice.profiles import get_custom_voice_store
+        custom = get_custom_voice_store().resolve(voice_id, lang)
+        if custom:
+            return Path(custom)
+    return _pick_model(lang)
+
+
+def synthesize(text: str, lang: str = "auto", voice_id: str | None = None) -> tuple[bytes, str]:
+    """Retourne (wav_bytes, voice_model_name).
+
+    Si `voice_id` (une des 10 voix Lunziko) est fourni : privilégie une voix fine-tunée
+    enregistrée pour (voice_id, lang), et applique le profil de rendu (débit) de la voix.
+    """
+    model = _resolve_model(lang, voice_id)
     if model is None:
         raise RuntimeError("aucune voix Piper (.onnx) disponible ; "
-                           "télécharger via `python -m piper.download_voices <voix>`")
+                           "télécharger via `python -m piper.download_voices <voix>` "
+                           "ou enregistrer une voix fine-tunée")
     voice = _load(model)
+    syn_config = None
+    if voice_id:
+        from ai_engine.modules.voice.profiles import render_profile
+        prof = render_profile(voice_id)
+        if prof.get("known") and prof.get("length_scale") is not None:
+            try:
+                from piper import SynthesisConfig
+                syn_config = SynthesisConfig(length_scale=prof["length_scale"])
+            except Exception:
+                syn_config = None  # API Piper variable : repli débit par défaut
     buf = io.BytesIO()
     with wave.open(buf, "wb") as wf:
-        voice.synthesize_wav(text, wf)
+        if syn_config is not None:
+            try:
+                voice.synthesize_wav(text, wf, syn_config=syn_config)
+            except TypeError:
+                voice.synthesize_wav(text, wf)  # version Piper sans syn_config
+        else:
+            voice.synthesize_wav(text, wf)
     return buf.getvalue(), model.stem

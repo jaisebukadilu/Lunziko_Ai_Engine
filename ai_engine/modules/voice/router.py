@@ -7,6 +7,7 @@ Inférence (tts/stt/translate/speak) : validation réelle + 501 jusqu'aux phases
 from __future__ import annotations
 
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
+from pydantic import BaseModel, Field
 
 from ai_engine.modules.voice.model_store import get_voice_store
 from ai_engine.modules.voice.schemas import LanguagePack, TranslateRequest, TTSRequest, Voice
@@ -27,6 +28,76 @@ def get_one_voice(voice_id: str) -> Voice:
     if v is None:
         raise HTTPException(status_code=404, detail=f"Voix inconnue: {voice_id}")
     return v
+
+
+# --- Profils de rendu + voix personnalisées/fine-tunées (V-5) ------------
+@router.get("/profiles")
+def voice_profiles() -> list[dict]:
+    from ai_engine.modules.voice.profiles import all_profiles
+    return all_profiles()
+
+
+@router.get("/profiles/{voice_id}")
+def voice_profile(voice_id: str) -> dict:
+    from ai_engine.modules.voice.profiles import render_profile
+    prof = render_profile(voice_id)
+    if not prof.get("known"):
+        raise HTTPException(status_code=404, detail=f"Voix inconnue: {voice_id}")
+    return prof
+
+
+class CustomVoiceRequest(BaseModel):
+    lang: str
+    model_path: str
+    quality: str = "alpha"
+
+
+@router.get("/custom-voices")
+def list_custom_voices(lang: str | None = None) -> list[dict]:
+    from ai_engine.modules.voice.profiles import get_custom_voice_store
+    return get_custom_voice_store().list(lang)
+
+
+@router.post("/voices/{voice_id}/model")
+def register_custom_voice(voice_id: str, req: CustomVoiceRequest) -> dict:
+    """Enregistre une voix fine-tunée (ex. lingála/swahili) : un .onnx local pour (voice_id, lang)."""
+    from ai_engine.modules.voice.profiles import get_custom_voice_store
+    try:
+        return get_custom_voice_store().register(voice_id, req.lang, req.model_path,
+                                                 quality=req.quality)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/voices/{voice_id}/model")
+def unregister_custom_voice(voice_id: str, lang: str) -> dict:
+    from ai_engine.modules.voice.profiles import get_custom_voice_store
+    if not get_custom_voice_store().unregister(voice_id, lang):
+        raise HTTPException(status_code=404, detail="voix personnalisée non enregistrée")
+    return {"voice_id": voice_id, "lang": lang, "status": "removed"}
+
+
+# --- Préparation de fine-tuning (V-5) -----------------------------------
+class FinetunePrepareRequest(BaseModel):
+    pairs: list[dict] = Field(min_length=1, description="paires {audio, text}")
+    lang: str
+    voice_id: str
+    task: str = "tts"
+
+
+@router.post("/finetune/prepare")
+def finetune_prepare(req: FinetunePrepareRequest) -> dict:
+    from ai_engine.modules.voice.finetune import prepare_dataset
+    try:
+        return prepare_dataset(req.pairs, lang=req.lang, voice_id=req.voice_id, task=req.task)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/finetune/datasets")
+def finetune_datasets() -> list[dict]:
+    from ai_engine.modules.voice.finetune import list_datasets
+    return list_datasets()
 
 
 # --- Packs de langues ----------------------------------------------------
@@ -97,13 +168,14 @@ def tts(req: TTSRequest):
         raise HTTPException(status_code=501,
                             detail="TTS: installer l'extra `voice-tts` (piper-tts) + une voix .onnx")
     try:
-        wav, model = synthesize(req.text, lang=req.lang or "auto")
+        wav, model = synthesize(req.text, lang=req.lang or "auto", voice_id=req.voice)
     except RuntimeError as e:
         raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"TTS: {e}")
     return Response(content=wav, media_type="audio/wav",
-                    headers={"X-Voice-Model": model, "X-Audio-Bytes": str(len(wav))})
+                    headers={"X-Voice-Model": model, "X-Voice-Id": req.voice,
+                             "X-Audio-Bytes": str(len(wav))})
 
 
 @router.get("/tts/status")
