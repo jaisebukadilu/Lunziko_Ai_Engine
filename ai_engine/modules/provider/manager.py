@@ -28,7 +28,8 @@ class ProviderManager:
             "deepseek": OpenAICompatProvider("deepseek", "https://api.deepseek.com", s.deepseek_api_key, "deepseek-chat"),
         }
         if s.ae_local_base_url:
-            self._providers["local"] = OpenAICompatProvider("local", s.ae_local_base_url, "", "local-model")
+            self._providers["local"] = OpenAICompatProvider(
+                "local", s.ae_local_base_url, "", s.ae_local_model or "local-model")
         if s.qwen_api_key:
             # Qwen 3.8-Max (Alibaba) — endpoint compatible OpenAI.
             self._providers["qwen"] = OpenAICompatProvider(

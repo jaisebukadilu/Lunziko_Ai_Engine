@@ -38,7 +38,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     mistral_api_key: str = ""
     deepseek_api_key: str = ""
-    ae_local_base_url: str = ""
+    ae_local_base_url: str = ""   # ex Ollama : http://localhost:11434/v1
+    ae_local_model: str = ""      # modèle de chat local par défaut (ex Ollama : qwen2.5:7b / glm4)
     ae_code_model: str = ""  # modèle code local (Ollama) : qwen2.5-coder / deepseek-coder-v2 / codellama
     # Qwen 3.8-Max (Alibaba) — compatible OpenAI/Anthropic. Provider optionnel activé si clé présente.
     qwen_api_key: str = ""
