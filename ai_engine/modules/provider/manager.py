@@ -30,6 +30,10 @@ class ProviderManager:
         if s.ae_local_base_url:
             self._providers["local"] = OpenAICompatProvider(
                 "local", s.ae_local_base_url, "", s.ae_local_model or "local-model")
+        if s.ae_lmstudio_base_url:
+            # LM Studio — serveur local OpenAI-compatible (distinct d'Ollama).
+            self._providers["lmstudio"] = OpenAICompatProvider(
+                "lmstudio", s.ae_lmstudio_base_url, "", s.ae_lmstudio_model or "local-model")
         if s.qwen_api_key:
             # Qwen 3.8-Max (Alibaba) — endpoint compatible OpenAI.
             self._providers["qwen"] = OpenAICompatProvider(

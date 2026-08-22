@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     ae_local_base_url: str = ""   # ex Ollama : http://localhost:11434/v1
     ae_local_model: str = ""      # modèle de chat local par défaut (ex Ollama : qwen2.5:7b / glm4)
     ae_code_model: str = ""  # modèle code local (Ollama) : qwen2.5-coder / deepseek-coder-v2 / codellama
+    # LM Studio (serveur local OpenAI-compatible) — provider `lmstudio` activé si base URL définie.
+    # Démarrer le serveur dans LM Studio (onglet Developer / Local Server). Défaut port 1234.
+    ae_lmstudio_base_url: str = ""     # ex http://localhost:1234/v1
+    ae_lmstudio_model: str = ""        # modèle chargé dans LM Studio (sinon 1er dispo)
+
     # Qwen 3.8-Max (Alibaba) — compatible OpenAI/Anthropic. Provider optionnel activé si clé présente.
     qwen_api_key: str = ""
     ae_qwen_base_url: str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
