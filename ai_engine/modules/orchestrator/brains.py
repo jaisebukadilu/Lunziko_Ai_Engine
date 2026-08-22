@@ -96,6 +96,17 @@ class BrainRegistry:
                 return {**rec, "status": "active", "backend": "graphics-engine"}
         except Exception:
             pass
+        # Backend génératif branché (ComfyUI/Fal/Replicate/diffusers) -> Brain multimédia actif.
+        try:
+            from ai_engine.modules.generation.backends import backends_for
+            kind = {"image": "image", "video": "video", "audio": "audio",
+                    "music": "music", "3d": "3d"}.get(rec["id"])
+            if kind:
+                gen_backends = backends_for(kind)
+                if gen_backends:
+                    return {**rec, "status": "active", "backend": gen_backends[0]}
+        except Exception:
+            pass
         return rec
 
     def list(self, status: str | None = None) -> list[dict]:

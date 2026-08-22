@@ -100,6 +100,12 @@ class Settings(BaseSettings):
     ae_graphics_engine_url: str = ""
     ae_graphics_engine_api_key: str = ""
 
+    # Génération multimédia (image/vidéo/audio/3D) — backends OPTIONNELS (GPU/modèles dédiés).
+    # Absents => génération `deferred` (jamais simulée). Voir GENERATIVE_BRAINS.md.
+    ae_comfyui_url: str = ""            # serveur ComfyUI (ex http://127.0.0.1:8188) : image/vidéo
+    ae_fal_api_key: str = ""           # Fal.ai (hébergé) : image/vidéo
+    ae_replicate_api_token: str = ""   # Replicate (hébergé) : image/vidéo/audio
+
     # --- Dérivés ---------------------------------------------------------
     @property
     def home(self) -> Path:
