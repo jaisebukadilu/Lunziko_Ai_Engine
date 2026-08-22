@@ -123,5 +123,25 @@ Détection native `.kt/.kts/.java/.gradle`.
 | GET  | `/v1/code-intelligence/project/{p}` | Contexte écosystème d'un projet Lunziko |
 
 Les mêmes capacités sont exposées comme **outils MCP** (`code_detect_language`, `code_understand`,
-`code_search`, `code_dependencies`, `code_project_context`) et donc pilotables par n'importe quel
-agent/éditeur compatible MCP ou OpenAI tool-calling.
+`code_search`, `code_dependencies`, `code_project_context`, `code_write`, `code_edit`) et donc
+pilotables par n'importe quel agent/éditeur compatible MCP ou OpenAI tool-calling.
+
+## Écriture contrôlée de fichiers (avec garde-fous)
+
+| Méthode | Route | Rôle |
+|---------|-------|------|
+| POST | `/v1/code-intelligence/write` | Crée/écrase un fichier (dry-run par défaut) |
+| POST | `/v1/code-intelligence/edit` | Remplace un `old_string` **unique** (str-replace sûr) |
+| POST | `/v1/code-intelligence/delete` | Suppression **soft** (sauvegardée, réversible) |
+| POST | `/v1/code-intelligence/restore/{backup_id}` | Restaure une sauvegarde |
+| GET  | `/v1/code-intelligence/backups` | Liste des sauvegardes |
+| GET  | `/v1/code-intelligence/git/{status,diff,log}` | Lecture Git |
+| POST | `/v1/code-intelligence/git/checkpoint` | Branche de sécurité + commit **avant** édition |
+| POST | `/v1/code-intelligence/git/commit` | Commit local (jamais de push auto) |
+
+**Garde-fous (garantie « aucune action destructive sans filet ») :**
+- **dry-run par défaut** : sans `confirm=true`, on renvoie un **diff** sans rien écrire ;
+- **sandbox de chemin** : refus du `..` et de tout chemin hors `root` (option `AE_CODEINTEL_WORKSPACE`) ;
+- **zones protégées** : `.git/`, `node_modules/`, `.venv/`, `.env`, clés SSH… ;
+- **sauvegarde réversible** avant tout écrasement/suppression → `restore` ;
+- **Git** : jamais de `push`/`reset --hard`/`clean`/`rebase` ; `checkpoint` crée un filet avant édition.

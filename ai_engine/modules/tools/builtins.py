@@ -78,6 +78,29 @@ async def _code_project_context(args: dict) -> object:
     return get_code_intelligence().project_context(args["project"])
 
 
+async def _code_write(args: dict) -> object:
+    from ai_engine.modules.codeintel.editor import GuardrailError, get_safe_editor
+
+    try:
+        return get_safe_editor().write(
+            args["root"], args["path"], args.get("content", ""),
+            confirm=bool(args.get("confirm", False)),
+            allow_overwrite=bool(args.get("allow_overwrite", False)))
+    except GuardrailError as e:
+        return {"guardrail": str(e)}
+
+
+async def _code_edit(args: dict) -> object:
+    from ai_engine.modules.codeintel.editor import GuardrailError, get_safe_editor
+
+    try:
+        return get_safe_editor().edit(
+            args["root"], args["path"], args["old_string"], args["new_string"],
+            confirm=bool(args.get("confirm", False)))
+    except GuardrailError as e:
+        return {"guardrail": str(e)}
+
+
 _BUILTINS = [
     (ToolSpec(
         name="ecosystem_search",
@@ -155,6 +178,26 @@ _BUILTINS = [
         parameters={"type": "object", "properties": {"project": {"type": "string"}},
                     "required": ["project"]}),
      _code_project_context),
+    (ToolSpec(
+        name="code_write",
+        description=("Écrit un fichier (création/écrasement) avec garde-fous. Sans confirm=true, "
+                     "renvoie un APERÇU diff sans écrire. Écrasement => allow_overwrite=true + backup."),
+        parameters={"type": "object", "properties": {
+            "root": {"type": "string"}, "path": {"type": "string"},
+            "content": {"type": "string"}, "confirm": {"type": "boolean", "default": False},
+            "allow_overwrite": {"type": "boolean", "default": False}},
+            "required": ["root", "path", "content"]}),
+     _code_write),
+    (ToolSpec(
+        name="code_edit",
+        description=("Modifie un fichier par remplacement d'un old_string UNIQUE. Sans confirm=true, "
+                     "renvoie le diff sans écrire. Sauvegarde réversible avant écriture."),
+        parameters={"type": "object", "properties": {
+            "root": {"type": "string"}, "path": {"type": "string"},
+            "old_string": {"type": "string"}, "new_string": {"type": "string"},
+            "confirm": {"type": "boolean", "default": False}},
+            "required": ["root", "path", "old_string", "new_string"]}),
+     _code_edit),
 ]
 
 

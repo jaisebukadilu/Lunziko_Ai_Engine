@@ -78,6 +78,11 @@ class Settings(BaseSettings):
     ae_tts_voices_dir: str = ""        # vide => <home>/voice/piper
     ae_tts_default_voice: str = ""     # vide => 1re voix .onnx trouvée
 
+    # Code Intelligence — écriture contrôlée. Workspace autorisé optionnel (fige la sandbox
+    # de chemin) : vide => le `root` fourni par la requête fait foi. Les écritures exigent
+    # toujours confirm=True + produisent une sauvegarde réversible.
+    ae_codeintel_workspace: str = ""
+
     # Voix — MT (traduction). Backend `auto` = MADLAD si `transformers`+`sentencepiece`
     # installés (extra `voice-mt`), sinon repli LLM via le Provider Manager.
     ae_mt_backend: str = "auto"        # auto | madlad | llm
