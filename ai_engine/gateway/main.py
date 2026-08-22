@@ -21,6 +21,7 @@ from ai_engine.modules.autonomy.router import router as autonomy_router
 from ai_engine.modules.catalog.router import router as catalog_router
 from ai_engine.modules.code.router import router as code_router
 from ai_engine.modules.codeexec.router import router as codeexec_router
+from ai_engine.modules.codeintel.router import router as codeintel_router
 from ai_engine.modules.connectors.router import router as connectors_router
 from ai_engine.modules.context.router import router as context_router
 from ai_engine.modules.graphics.router import router as graphics_router
@@ -34,6 +35,7 @@ from ai_engine.modules.knowledge.router import router as knowledge_router
 from ai_engine.modules.learning.router import router as learning_router
 from ai_engine.modules.mcp.router import router as mcp_router
 from ai_engine.modules.memory.router import router as memory_router
+from ai_engine.modules.models.router import router as models_router
 from ai_engine.modules.neural.router import router as neural_router
 from ai_engine.modules.orchestrator.router import router as orchestrator_router
 from ai_engine.modules.provider.router import router as provider_router
@@ -113,7 +115,8 @@ def health() -> dict:
             "context": True, "feedback": True, "catalog": True, "automation": True,
             "actions": True, "orchestrator": True, "codeexec": True, "graphics": True,
             "connectors": True, "safety": True, "search": True,
-            "learning": True, "autonomy": True,
+            "learning": True, "autonomy": True, "models": True,
+            "code_intelligence": True,
         },
         "code_local_ready": bool(settings.ae_local_base_url),
         "openai_compatible": "/v1/chat/completions · /v1/embeddings · /v1/models",
@@ -151,6 +154,8 @@ app.include_router(safety_router, dependencies=[Depends(require_api_key)])
 app.include_router(search_router, dependencies=[Depends(require_api_key)])
 app.include_router(learning_router, dependencies=[Depends(require_api_key)])
 app.include_router(autonomy_router, dependencies=[Depends(require_api_key)])
+app.include_router(models_router, dependencies=[Depends(require_api_key)])
+app.include_router(codeintel_router, dependencies=[Depends(require_api_key)])
 # WebSocket (interface visuelle future) : auth par token de requête, hors dépendance d'en-tête.
 app.include_router(assistant_ws_router)
 # Endpoints compatibles OpenAI : auth Bearer OU X-API-Key (drop-in Open WebUI/LocalAI/…)

@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     deepseek_api_key: str = ""
     ae_local_base_url: str = ""
     ae_code_model: str = ""  # modèle code local (Ollama) : qwen2.5-coder / deepseek-coder-v2 / codellama
+    # Qwen 3.8-Max (Alibaba) — compatible OpenAI/Anthropic. Provider optionnel activé si clé présente.
+    qwen_api_key: str = ""
+    ae_qwen_base_url: str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    ae_qwen_model: str = "qwen3.8-max"
 
     # Embeddings (RAG). "auto" => 1er cloud dispo, sinon repli local "hash" (offline).
     ae_embed_provider: str = "auto"  # auto | openai | mistral | gemini | local | hash

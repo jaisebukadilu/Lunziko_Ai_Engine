@@ -47,6 +47,37 @@ async def _web_search(args: dict) -> object:
     return res.get("results", res)
 
 
+async def _code_detect_language(args: dict) -> object:
+    from ai_engine.modules.codeintel.engine import get_code_intelligence
+
+    return get_code_intelligence().detect_language(args["path"]) or {"language": None}
+
+
+async def _code_understand(args: dict) -> object:
+    from ai_engine.modules.codeintel.engine import get_code_intelligence
+
+    return get_code_intelligence().understand(args["root"])
+
+
+async def _code_search(args: dict) -> object:
+    from ai_engine.modules.codeintel.engine import get_code_intelligence
+
+    return await get_code_intelligence().search_code(
+        args["project"], args["query"], k=int(args.get("k", 8)))
+
+
+async def _code_dependencies(args: dict) -> object:
+    from ai_engine.modules.codeintel.engine import get_code_intelligence
+
+    return get_code_intelligence().dependencies(args["root"])
+
+
+async def _code_project_context(args: dict) -> object:
+    from ai_engine.modules.codeintel.engine import get_code_intelligence
+
+    return get_code_intelligence().project_context(args["project"])
+
+
 _BUILTINS = [
     (ToolSpec(
         name="ecosystem_search",
@@ -91,6 +122,39 @@ _BUILTINS = [
             "query": {"type": "string"}, "k": {"type": "integer", "default": 5}},
             "required": ["query"]}),
      _web_search),
+    # --- Code Intelligence (utilisable depuis VS Code/Cursor/PowerShell via MCP + tool-calling) ---
+    (ToolSpec(
+        name="code_detect_language",
+        description="Détecte le langage de programmation d'un fichier par son chemin.",
+        parameters={"type": "object", "properties": {"path": {"type": "string"}},
+                    "required": ["path"]}),
+     _code_detect_language),
+    (ToolSpec(
+        name="code_understand",
+        description="Analyse l'architecture d'un dépôt (langages, points d'entrée, manifestes).",
+        parameters={"type": "object", "properties": {"root": {"type": "string"}},
+                    "required": ["root"]}),
+     _code_understand),
+    (ToolSpec(
+        name="code_search",
+        description="Recherche sémantique dans le code indexé d'un projet.",
+        parameters={"type": "object", "properties": {
+            "project": {"type": "string"}, "query": {"type": "string"},
+            "k": {"type": "integer", "default": 8}},
+            "required": ["project", "query"]}),
+     _code_search),
+    (ToolSpec(
+        name="code_dependencies",
+        description="Extrait les dépendances déclarées d'un dépôt (npm/pip/cargo/go/maven…).",
+        parameters={"type": "object", "properties": {"root": {"type": "string"}},
+                    "required": ["root"]}),
+     _code_dependencies),
+    (ToolSpec(
+        name="code_project_context",
+        description="Contexte écosystème d'un projet Lunziko (fonctions, API, contrats, index).",
+        parameters={"type": "object", "properties": {"project": {"type": "string"}},
+                    "required": ["project"]}),
+     _code_project_context),
 ]
 
 

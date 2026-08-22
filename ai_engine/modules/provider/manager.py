@@ -29,6 +29,10 @@ class ProviderManager:
         }
         if s.ae_local_base_url:
             self._providers["local"] = OpenAICompatProvider("local", s.ae_local_base_url, "", "local-model")
+        if s.qwen_api_key:
+            # Qwen 3.8-Max (Alibaba) — endpoint compatible OpenAI.
+            self._providers["qwen"] = OpenAICompatProvider(
+                "qwen", s.ae_qwen_base_url, s.qwen_api_key, s.ae_qwen_model)
         if s.ae_lunziko_llm_ckpt:
             # LLM natif Lunziko (paquet lunziko-llm), 100% local, from scratch.
             self._providers["lunziko"] = LunzikoNativeProvider(s.ae_lunziko_llm_ckpt, s.ae_lunziko_llm_tokenizer)

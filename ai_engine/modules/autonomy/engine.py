@@ -31,12 +31,17 @@ class ResilientAgent:
         self._ltm = get_continuous_memory()
 
     async def _default_execute(self, action: str, args: dict) -> dict:
+        import json
+
         from ai_engine.modules.tools.registry import get_tool_registry
+        out = await get_tool_registry().execute(action, args or {})  # renvoie une chaîne JSON
         try:
-            result = get_tool_registry().execute(action, args or {})
-            return {"ok": True, "result": result}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+            parsed = json.loads(out)
+        except Exception:
+            parsed = out
+        if isinstance(parsed, dict) and "error" in parsed:
+            return {"ok": False, "error": parsed["error"]}
+        return {"ok": True, "result": parsed}
 
     async def solve(self, goal: str, *, scope: str = "global",
                     max_iterations: int = 6) -> dict:
