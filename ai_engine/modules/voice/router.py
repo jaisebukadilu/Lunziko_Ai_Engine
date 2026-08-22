@@ -114,11 +114,30 @@ def stt_status() -> dict:
 
 
 @router.post("/translate")
-def translate(req: TranslateRequest) -> dict:
-    if req.source == req.target:
-        raise HTTPException(status_code=400, detail="source et target identiques")
-    # V-3 : MADLAD-400 ; fallback via le Provider Manager PROPRE à l'AI Engine
-    raise HTTPException(status_code=501, detail="MT: inférence prévue en phase V-3")
+async def translate(req: TranslateRequest) -> dict:
+    # V-3 : MADLAD-400 on-device ; fallback via le Provider Manager PROPRE à l'AI Engine.
+    from ai_engine.modules.voice.translate_engine import get_translation_engine
+    try:
+        return await get_translation_engine().translate(req.text, req.source, req.target)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"MT: {e}")
+
+
+@router.get("/translate/status")
+def translate_status() -> dict:
+    from ai_engine.modules.voice.translate_engine import (
+        LANG_NAMES, madlad_available, resolve_backend,
+    )
+    from ai_engine.config import get_settings
+    return {
+        "backend": resolve_backend(),
+        "madlad_available": madlad_available(),
+        "madlad_model": get_settings().ae_mt_model,
+        "languages": sorted(LANG_NAMES),
+        "llm_fallback": True,
+    }
 
 
 @router.post("/speak")
@@ -127,8 +146,57 @@ async def speak(
     target: str = Form(...),
     voice: str = Form(...),
     source: str = Form("auto"),
-    format: str = Form("mp3"),
-) -> dict:
+    format: str = Form("wav"),
+):
+    """Interprète en un appel : STT → MT → TTS (audio d'entrée → audio traduit)."""
     if voice not in VOICE_IDS:
         raise HTTPException(status_code=400, detail=f"Voix inconnue: {voice}")
-    raise HTTPException(status_code=501, detail="speak: pipeline assemblé en phase V-3")
+
+    from ai_engine.modules.voice.stt_engine import stt_available, transcribe
+    from ai_engine.modules.voice.translate_engine import get_translation_engine
+    from ai_engine.modules.voice.tts_engine import synthesize, tts_available
+
+    if not stt_available():
+        raise HTTPException(status_code=501, detail="speak: STT indisponible (extra `voice-stt`)")
+    if not tts_available():
+        raise HTTPException(status_code=501, detail="speak: TTS indisponible (extra `voice-tts`)")
+
+    # 1) STT : audio → texte source
+    data = await audio.read()
+    try:
+        stt_res = transcribe(data, lang=source)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"speak/STT: {e}")
+    src_text = stt_res.get("text", "")
+    detected = stt_res.get("lang", source)
+    if not src_text:
+        raise HTTPException(status_code=422, detail="speak: aucune parole détectée dans l'audio")
+
+    # 2) MT : texte source → texte cible
+    try:
+        mt = await get_translation_engine().translate(src_text, source=source, target=target)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"speak/MT: {e}")
+    tgt_text = mt["text"]
+
+    # 3) TTS : texte cible → audio
+    try:
+        wav, model = synthesize(tgt_text, lang=target)
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"speak/TTS: {e}")
+
+    return Response(
+        content=wav, media_type="audio/wav",
+        headers={
+            "X-Source-Lang": str(detected),
+            "X-Source-Text": src_text[:512],
+            "X-Target-Lang": target,
+            "X-Target-Text": tgt_text[:512],
+            "X-MT-Backend": mt["backend"],
+            "X-Voice-Model": model,
+        },
+    )

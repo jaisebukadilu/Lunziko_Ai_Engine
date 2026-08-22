@@ -32,6 +32,7 @@ neural-hf = ["transformers>=4.44", "sentence-transformers>=3.0"]  # modèles pr�
 search = ["ddgs>=6"]                                  # recherche web sans clé (DuckDuckGo)
 voice-stt = ["faster-whisper>=1.0"]                   # STT Whisper (V-1) — modèle téléchargé au 1er usage
 voice-tts = ["piper-tts>=1.7"]                        # TTS Piper (V-1) — voix .onnx à télécharger
+voice-mt = ["transformers>=4.44", "sentencepiece>=0.2"]  # MT MADLAD-400 (V-3) — modèle téléchargé au 1er usage
 dev = ["pytest>=8", "ruff>=0.6", "ddgs>=6"]
 
 [tool.pytest.ini_options]

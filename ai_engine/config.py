@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     ae_tts_voices_dir: str = ""        # vide => <home>/voice/piper
     ae_tts_default_voice: str = ""     # vide => 1re voix .onnx trouvée
 
+    # Voix — MT (traduction). Backend `auto` = MADLAD si `transformers`+`sentencepiece`
+    # installés (extra `voice-mt`), sinon repli LLM via le Provider Manager.
+    ae_mt_backend: str = "auto"        # auto | madlad | llm
+    ae_mt_model: str = "google/madlad400-3b-mt"  # modèle MADLAD-400 (Apache-2.0)
+
     # Search Engine (web). Backend `duckduckgo` sans clé par défaut ; `google` (CSE) si clé+cx.
     ae_search_backend: str = "auto"   # auto | duckduckgo | google
     ae_google_api_key: str = ""
