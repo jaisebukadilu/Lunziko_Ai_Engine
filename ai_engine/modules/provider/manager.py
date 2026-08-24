@@ -30,6 +30,10 @@ class ProviderManager:
         if s.ae_local_base_url:
             self._providers["local"] = OpenAICompatProvider(
                 "local", s.ae_local_base_url, "", s.ae_local_model or "local-model")
+            # Modèles Ollama additionnels comme providers `ollama-<nom>` (ex second modèle Mistral).
+            for m in s.ollama_models_list:
+                pname = "ollama-" + m.split(":")[0]
+                self._providers[pname] = OpenAICompatProvider(pname, s.ae_local_base_url, "", m)
         if s.ae_lmstudio_base_url:
             # LM Studio — serveur local OpenAI-compatible (distinct d'Ollama).
             self._providers["lmstudio"] = OpenAICompatProvider(

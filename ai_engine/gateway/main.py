@@ -34,6 +34,7 @@ from ai_engine.modules.openai_api.router import router as openai_router
 from ai_engine.modules.embeddings.router import router as embeddings_router
 from ai_engine.modules.knowledge.router import router as knowledge_router
 from ai_engine.modules.learning.router import router as learning_router
+from ai_engine.modules.lunziko_ai.router import router as lunziko_ai_router
 from ai_engine.modules.mcp.router import router as mcp_router
 from ai_engine.modules.memory.router import router as memory_router
 from ai_engine.modules.models.router import router as models_router
@@ -119,6 +120,7 @@ def health() -> dict:
             "connectors": True, "safety": True, "search": True,
             "learning": True, "autonomy": True, "models": True,
             "code_intelligence": True, "generation": True, "reasoning": True,
+            "lunziko_ai": True,
         },
         "code_local_ready": bool(settings.ae_local_base_url),
         "openai_compatible": "/v1/chat/completions · /v1/embeddings · /v1/models",
@@ -160,6 +162,7 @@ app.include_router(models_router, dependencies=[Depends(require_api_key)])
 app.include_router(codeintel_router, dependencies=[Depends(require_api_key)])
 app.include_router(generation_router, dependencies=[Depends(require_api_key)])
 app.include_router(reasoning_router, dependencies=[Depends(require_api_key)])
+app.include_router(lunziko_ai_router, dependencies=[Depends(require_api_key)])
 # WebSocket (interface visuelle future) : auth par token de requête, hors dépendance d'en-tête.
 app.include_router(assistant_ws_router)
 # Endpoints compatibles OpenAI : auth Bearer OU X-API-Key (drop-in Open WebUI/LocalAI/…)

@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     deepseek_api_key: str = ""
     ae_local_base_url: str = ""   # ex Ollama : http://localhost:11434/v1
     ae_local_model: str = ""      # modèle de chat local par défaut (ex Ollama : qwen2.5:7b / glm4)
+    # Modèles Ollama additionnels exposés comme providers `ollama-<nom>` (CSV).
+    # ex "mistral,glm4" => providers `ollama-mistral`, `ollama-glm4` (même base_url que local).
+    ae_ollama_models: str = ""
     ae_code_model: str = ""  # modèle code local (Ollama) : qwen2.5-coder / deepseek-coder-v2 / codellama
     # LM Studio (serveur local OpenAI-compatible) — provider `lmstudio` activé si base URL définie.
     # Démarrer le serveur dans LM Studio (onglet Developer / Local Server). Défaut port 1234.
@@ -144,6 +147,10 @@ class Settings(BaseSettings):
     @property
     def fallback_order(self) -> list[str]:
         return [p.strip() for p in self.ae_provider_fallback.split(",") if p.strip()]
+
+    @property
+    def ollama_models_list(self) -> list[str]:
+        return [m.strip() for m in self.ae_ollama_models.split(",") if m.strip()]
 
 
 @lru_cache
